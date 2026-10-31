@@ -1,15 +1,15 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261031173524';
-import { ll } from './city.js?v=20261031173524';
-import { Terrain } from './terrain.js?v=20261031173524';
-import { createWorld, TOD_NAMES } from './world.js?v=20261031173524';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031173524';
-import { Sfx, Bgm } from './audio.js?v=20261031173524';
-import { Chaser } from './oni.js?v=20261031173524';
-import { Fireworks } from './fireworks.js?v=20261031173524';
-import { WATER } from './water-data.js?v=20261031173524';
-import { ROADS } from './road-data.js?v=20261031173524';
+import { Course, LANE_W } from './course.js?v=20261031174031';
+import { ll } from './city.js?v=20261031174031';
+import { Terrain } from './terrain.js?v=20261031174031';
+import { createWorld, TOD_NAMES } from './world.js?v=20261031174031';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031174031';
+import { Sfx, Bgm } from './audio.js?v=20261031174031';
+import { Chaser } from './oni.js?v=20261031174031';
+import { Fireworks } from './fireworks.js?v=20261031174031';
+import { WATER } from './water-data.js?v=20261031174031';
+import { ROADS } from './road-data.js?v=20261031174031';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -598,7 +598,8 @@ function crash(by) {
 
 // ---------- ミニマップ (お濠とコース。進行方向が上) ----------
 const mini = (() => {
-  const S = 0.62; // px / m (拡大して、まわりの道とお濠がよくわかるように)
+  const S = 1.0; // 下絵の解像度 (px / m)
+  const Z = 1.24; // 表示の拡大 (1.24 px / m。まわり約 ±100m)
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   for (let i = 0; i < course.N; i += 10) { x0 = Math.min(x0, course.X[i]); x1 = Math.max(x1, course.X[i]); z0 = Math.min(z0, course.Z[i]); z1 = Math.max(z1, course.Z[i]); }
   x0 -= 400; x1 += 400; z0 -= 400; z1 += 400;
@@ -651,6 +652,7 @@ const mini = (() => {
       ctx.beginPath(); ctx.arc(W / 2, H / 2, W / 2 - 2, 0, Math.PI * 2); ctx.clip();
       ctx.translate(W / 2, H / 2 + 30);
       ctx.rotate(-Math.atan2(f.tx, -f.tz));
+      ctx.scale(Z, Z);
       ctx.translate(-px, -py);
       ctx.drawImage(c, 0, 0);
       // 車・バイク
@@ -659,18 +661,18 @@ const mini = (() => {
         if (Math.abs(p.d - P.D) > 220) continue;
         const q = course.world(p.d, p.u, {});
         ctx.fillStyle = p.kind === 0 ? '#e0533d' : '#555';
-        ctx.fillRect((q.x - x0) * S - 1.5, (q.z - z0) * S - 1.5, 3, 3);
+        ctx.fillRect((q.x - x0) * S - 1.5 / Z, (q.z - z0) * S - 1.5 / Z, 3 / Z, 3 / Z);
       }
       if (game.event) {
         ctx.fillStyle = '#7a1c1c';
-        for (const m of game.event.members) { const q = course.world(EVENT_S + m.dd, game.event.head + m.off, {}); ctx.fillRect((q.x - x0) * S - 1.5, (q.z - z0) * S - 1.5, 3, 3); }
+        for (const m of game.event.members) { const q = course.world(EVENT_S + m.dd, game.event.head + m.off, {}); ctx.fillRect((q.x - x0) * S - 1.5 / Z, (q.z - z0) * S - 1.5 / Z, 3 / Z, 3 / Z); }
       }
-      if (oni.active) { const q = course.world(oni.d, oni.u, {}); ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👹', (q.x - x0) * S, (q.z - z0) * S); }
+      if (oni.active) { const q = course.world(oni.d, oni.u, {}); ctx.font = `${16 / Z}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👹', (q.x - x0) * S, (q.z - z0) * S); }
       for (const o of game.vehicles) {
         if (o.free) continue;
         const p = course.world(o.d, o.u);
         ctx.fillStyle = o.kind === 'car' ? '#3355aa' : '#aa3366';
-        ctx.fillRect((p.x - x0) * S - 2, (p.z - z0) * S - 2, 4, 4);
+        ctx.fillRect((p.x - x0) * S - 2 / Z, (p.z - z0) * S - 2 / Z, 4 / Z, 4 / Z);
       }
       ctx.restore();
       // 自分
@@ -929,6 +931,8 @@ function step(dt) {
       if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + GRAZE_VEH) { graze(o); o.passed = true; }
       // 向こうから来る車: 進路に入っていたらクラクション
       if (o.dir < 0 && !o.honk && dd > 0 && dd < 50 && Math.abs(du) < 1.2 + o.wid / 2) { o.honk = true; o.kind === 'car' ? sfx.horn() : sfx.moto(0.3); }
+      // 後ろから来たバイクが追い抜いていく瞬間: 抜き去るバイクの音
+      if (o.dir > 0 && o.kind === 'moto' && !o.passSnd && dd > -6 && Math.abs(du) < 8) { o.passSnd = true; sfx.motoPass(Math.abs(du) < 2.5 ? 0.38 : 0.26); }
       if (o.dir > 0 && !o.warned && dd < 0 && dd > -55 && Math.abs(du) < 1.5 + o.wid / 2) {
         o.warned = true;
         if (o.kind === 'car') { sfx.horn(); popup('後ろから車！', 'warn'); } else { sfx.moto(0.35); popup('後ろからバイク！', 'warn'); }

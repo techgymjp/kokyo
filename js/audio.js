@@ -179,6 +179,25 @@ export class Sfx {
   curb() { this.tone(110, 0.08, 0.25, 'sine', 0.6); this.burst(0.06, 1200, 300, 0.15, 'lowpass'); }
   thunder(big) { this.burst(big ? 1.6 : 0.9, 2500, 60, big ? 0.9 : 0.55, 'lowpass', 0.7); this.tone(45, big ? 1.2 : 0.6, 0.5, 'sine', 0.6); }
   graze() { this.burst(0.22, 4200, 1800, 0.35, 'bandpass', 4); this.tone(1900, 0.12, 0.06, 'sawtooth', 0.7); this.tone(220, 0.1, 0.12, 'square', 0.8, 0.02); }
+  // バイクが追い抜いていく音: 近づいて (高い音) すれ違うと下がる (ドップラー) エンジン音と風切り
+  motoPass(vol = 0.3) {
+    if (!this.ctx) return;
+    const ctx = this.ctx, t = ctx.currentTime;
+    const o = ctx.createOscillator(), o2 = ctx.createOscillator();
+    o.type = 'sawtooth'; o2.type = 'square';
+    o.frequency.setValueAtTime(210, t); o.frequency.linearRampToValueAtTime(230, t + 0.35); o.frequency.exponentialRampToValueAtTime(120, t + 1.4);
+    o2.frequency.setValueAtTime(105, t); o2.frequency.linearRampToValueAtTime(115, t + 0.35); o2.frequency.exponentialRampToValueAtTime(60, t + 1.4);
+    // エンジンのバリバリ (音量を速く揺らす)
+    const am = ctx.createGain(); am.gain.value = 0.6;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 38; const dep = ctx.createGain(); dep.gain.value = 0.4;
+    lfo.connect(dep).connect(am.gain);
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(1800, t); f.frequency.exponentialRampToValueAtTime(700, t + 1.4);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+    o.connect(am); o2.connect(am); am.connect(f).connect(g).connect(this.master);
+    for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + 1.6); }
+    this.burst(0.6, 600, 2400, vol * 0.8, 'bandpass', 1.5);
+  }
   cobble() { this.burst(0.04, 900 + Math.random() * 600, 200, 0.07, 'lowpass'); }
   pass() { this.tone(1320, 0.06, 0.05, 'triangle'); }
   drum(delay = 0) { this.tone(70, 0.3, 0.5, 'sine', 0.6, delay); this.burst(0.1, 500, 120, 0.2, 'lowpass'); }
