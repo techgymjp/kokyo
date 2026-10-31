@@ -90,3 +90,13 @@ body.oni #edge { box-shadow: inset 0 0 90px 18px rgba(255, 30, 30, 0.55); }
 #flashFx { position: absolute; inset: 0; background: #fffbe0; opacity: 0; }
 #flashFx.on { animation: thunder 0.45s ease-out; }
 @keyframes thunder { 0% { opacity: 0.85; } 30% { opacity: 0.2; } 45% { opacity: 0.6; } 100% { opacity: 0; } }
+a.howto { display: inline-block; margin: 6px 4px; padding: 8px 22px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.4); color: #fff; text-decoration: none; }
+body.page { overflow: auto; height: auto; touch-action: auto; -webkit-user-select: text; user-select: text; }
+html:has(body.page) { overflow: auto; height: auto; }
+.doc { max-width: 680px; margin: 0 auto; padding: 24px 18px 40px; line-height: 1.7; }
+.doc h1 { color: #ffd36b; font-size: 30px; }
+.doc h2 { color: #ffd36b; font-size: 20px; margin-top: 26px; }
+.doc .keys { margin: 8px 0; font-size: 15px; }
+.doc .rules { font-size: 15px; }
+.doc .route { font-size: 13px; opacity: 0.85; }
+.doc .back { text-align: center; margin-top: 28px; }
