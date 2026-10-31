@@ -8,7 +8,7 @@ import { WATER, WATER_LEVEL } from './water-data.js';
 import { LANE_W, CURB_H } from './course.js';
 import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js';
 import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js';
-import { hideFamousSites, addFamous } from './landmarks3.js';
+import { hideFamousSites, addFamous, addNijubashi } from './landmarks3.js';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -347,6 +347,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     return { levelAt, water, waterMat, rt };
   }
   city.waterAt = (x, z) => (waterInfo.levelAt(x, z) !== null ? 1 : 0);
+  const nijubashi = addNijubashi(scene, G, waterInfo.levelAt);
 
   // 水面の映り込み: いちばん近い水面の高さを鏡にして、カメラを上下反転した所から描く (three.js の Reflector と同じ方法)
   const mirrorCam = new THREE.PerspectiveCamera();
@@ -637,7 +638,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   // スタート地点のまわりのタイルを先に組み立てる
   function prebuild(x, z) { while (city.streamTiles(x, z, 900, 4) > 0); }
 
-  return { famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
+  return { nijubashi, famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
 }
 
 // コースの道路のメッシュ

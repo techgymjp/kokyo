@@ -7,6 +7,7 @@ import { createWorld, TOD_NAMES } from './world.js';
 import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js';
 import { Sfx, Bgm } from './audio.js';
 import { Chaser } from './oni.js';
+import { Fireworks } from './fireworks.js';
 import { WATER } from './water-data.js';
 
 const $ = (id) => document.getElementById(id);
@@ -65,6 +66,8 @@ const world = createWorld({ renderer, scene, course, terrain, isTouch });
 const crowd = new Crowd(scene, 460);
 const bike = new Bike(scene);
 const oni = new Chaser(scene);
+const fireworks = new Fireworks(scene);
+function launchFireworks(n, big, gap) { for (const t of fireworks.show(camera, n, big, gap)) sfx.firework(t); }
 const sfx = new Sfx();
 const bgm = new Bgm(sfx);
 const SAKURADA = course.labels.find((l) => l.name === '桜田門').s;
@@ -90,7 +93,7 @@ const SHOW = [
   sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 13, look: 0.22, up: 0.8, labelUp: 34 }),
   sideAt('国会議事堂', at(...ll(35.67590, 139.74480), 40), lab('国立劇場'), lab('桜田門'), 70, { clear: 40, look: 0.1, up: 10, dist: 30, fov: 36 }),
   { name: '桜田門', mode: 'behind', s0: lab('桜田門') - 120, s1: lab('桜田門') + 30, p: at(...world.gates.sakurada, 14) },
-  sideAt('二重橋', at(...ll(35.68060, 139.75420), 8), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.1, up: 7, dist: 28, fov: 32, labelUp: 10 }),
+  sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.35, up: 4, dist: 30, fov: 13, labelUp: 9 }),
 ].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
 // 見せ場の視線 (カメラ → プレイヤー → 名所) をさえぎる木を取り除く
 world.clearTrees(SHOW.map((o) => {
@@ -257,6 +260,7 @@ function spawnMoto(dir, d) {
   o.ow = ow;
 }
 function clearActors() {
+  fireworks.clear();
   for (const o of game.vehicles) scene.remove(o.mesh);
   game.vehicles.length = 0;
   game.people.length = 0;
@@ -492,6 +496,12 @@ function finish(ok) {
     stars = t < 8 * 60 ? 3 : t < 9.5 * 60 ? 2 : 1;
     game.score += Math.max(0, Math.round((12 * 60 - t) * 20));
     title = '🏁 皇居一周 ゴール！';
+    // ゴールの花火 (何回かに分けて、大きいのも)
+    launchFireworks(5, false, 0.3);
+    setTimeout(() => launchFireworks(4, true, 0.45), 1400);
+    setTimeout(() => launchFireworks(7, false, 0.22), 2900);
+    setTimeout(() => launchFireworks(3, true, 0.5), 4300);
+    flash('🎆 ゴール！', 2.5, 'place');
   } else title = '💥 ' + game.crashBy;
   const score = Math.round(game.score);
   $('resTitle').textContent = title;
@@ -513,7 +523,7 @@ function finish(ok) {
   $('shareText').textContent = ok
     ? `#皇居ランナー でロードバイク皇居一周 ${fmtTime(game.t)}（${TOD_NAMES[tod]}のステージ）${'★'.repeat(stars)} スコア${score}`
     : `#皇居ランナー で${(dist / 1000).toFixed(2)}km 地点で${game.crashBy}…（${TOD_NAMES[tod]}のステージ）`;
-  setTimeout(() => $('result').classList.remove('hidden'), ok ? 800 : 1400);
+  setTimeout(() => $('result').classList.remove('hidden'), ok ? 4200 : 1400);
 }
 
 // かすった: ゲームオーバーにはせず、ガリッという音と減速 (同じ相手には1回だけ)
@@ -623,9 +633,10 @@ function step(dt) {
     // ダッシュ: 時速40km までの加速は体力を使わない (体力ゼロでもできる)。40km を超えて速くするときだけ体力を使う
     const vmax = onWalk ? V_WALK * 1.3 : V_DASH;
     const free = P.v < V_CRUISE;
-    const dashing = wantDash && P.v < vmax && (free || (P.stamina > 0 && !P.dashLock));
+    // 40km を超えてダッシュを押している間は、最高速 (62km) に達していても体力は減り続ける
+    const dashing = wantDash && (free || (P.stamina > 0 && !P.dashLock));
     if (dashing) {
-      a += 3.2;
+      if (P.v < vmax) a += 3.2;
       if (!free) {
         P.stamina = Math.max(0, P.stamina - DASH_DRAIN * dt);
         if (P.stamina <= 0) { P.dashLock = true; flash('体力ぎれ！ ダッシュを離して回復', 1.2); }
@@ -890,6 +901,7 @@ function render(dt, time) {
   }
   crowd.draw(crowdList);
   oni.draw(course, time, P);
+  fireworks.update(dt);
   if (bolt.t > 0) { bolt.t -= dt; bolt.mat.opacity = Math.max(0, Math.min(1, bolt.t * 5)) * (0.6 + Math.random() * 0.4); if (bolt.t <= 0) bolt.mesh.visible = false; }
   // 車
   for (const o of game.vehicles) {

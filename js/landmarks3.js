@@ -157,3 +157,78 @@ export function addFamous(scene, G) {
   }
   return out;
 }
+
+// ---- 二重橋 (正門石橋): 白い花崗岩の2連アーチの石橋と、欄干の飾り灯。奥に正門鉄橋、その上に伏見櫓 ----
+export function addNijubashi(scene, G, waterLevelAt) {
+  const [AX, AZ] = ll(35.67960, 139.75470); // 石橋の広場側
+  const [BX, BZ] = ll(35.68010, 139.75405); // 石橋の正門側
+  const [TX, TZ] = ll(35.68060, 139.75345); // 正門鉄橋
+  const g = new THREE.Group();
+  const cx = (AX + BX) / 2, cz = (AZ + BZ) / 2;
+  const L = Math.hypot(BX - AX, BZ - AZ);
+  const lv = (waterLevelAt && waterLevelAt(cx, cz)) ?? (G(cx, cz) - 5);
+  const deckY = Math.max(G(AX, AZ), G(BX, BZ));
+  g.position.set(cx, 0, cz);
+  g.rotation.y = Math.atan2(BX - AX, BZ - AZ);
+  const granite = M(0xe4e0d6), shade = M(0xc9c4b8), iron = M(0x2a2a2a), lamp = M(0xfff3cf, { emissive: 0x6a5a30 });
+  const H = deckY - lv;
+  // 橋の側面 (アーチの穴をあけた壁を、アーチごとに組み立てる)
+  const W = 12;
+  const archR = Math.min(H * 0.8, L / 4.4);
+  for (const side of [-1, 1]) {
+    const shape = new THREE.Shape();
+    shape.moveTo(-L / 2, -H); shape.lineTo(L / 2, -H); shape.lineTo(L / 2, 1.2); shape.lineTo(-L / 2, 1.2); shape.lineTo(-L / 2, -H);
+    for (const ax of [-L / 4, L / 4]) {
+      const hole = new THREE.Path();
+      hole.moveTo(ax + archR, -H);
+      hole.absarc(ax, -H + archR * 0.35, archR, 0, Math.PI, false);
+      hole.lineTo(ax - archR, -H);
+      shape.holes.push(hole);
+    }
+    const wall = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false }), granite);
+    wall.rotation.y = Math.PI / 2;
+    wall.position.set(side * (W / 2) - (side > 0 ? 1.2 : 0), deckY, 0);
+    g.add(wall);
+    // 欄干と飾り灯 (6基)
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, L), shade);
+    rail.position.set(side * (W / 2 - 0.3), deckY + 1.75, 0);
+    g.add(rail);
+    for (let k = 0; k < 3; k++) {
+      const z = -L / 2 + 4 + k * (L - 8) / 2;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 4.5, 8), iron);
+      post.position.set(side * (W / 2 - 0.3), deckY + 3.4, z);
+      g.add(post);
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), lamp);
+      globe.position.set(side * (W / 2 - 0.3), deckY + 5.9, z);
+      g.add(globe);
+    }
+  }
+  // 橋の上 (路面) とアーチの裏
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(W, 1.2, L), shade);
+  deck.position.set(0, deckY + 0.6, 0);
+  g.add(deck);
+  for (const ax of [-L / 4, L / 4]) {
+    const vault = new THREE.Mesh(new THREE.CylinderGeometry(archR, archR, W - 2.4, 20, 1, true, -Math.PI / 2, Math.PI), shade);
+    vault.rotation.z = Math.PI / 2;
+    vault.position.set(0, deckY - H + archR * 0.35, ax);
+    vault.material.side = THREE.DoubleSide;
+    g.add(vault);
+  }
+  scene.add(g);
+  // 正門鉄橋 (奥の鉄の橋)
+  const t = new THREE.Group();
+  t.position.set(TX, Math.max(G(TX, TZ), deckY) + 4, TZ);
+  t.rotation.y = g.rotation.y;
+  const tdeck = new THREE.Mesh(new THREE.BoxGeometry(10, 1.4, 34), M(0x7a7f84));
+  t.add(tdeck);
+  for (const side of [-1, 1]) {
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.4, 34), iron);
+    r.position.set(side * 4.8, 1.4, 0);
+    t.add(r);
+  }
+  const pier = new THREE.Mesh(new THREE.BoxGeometry(6, 14, 4), granite);
+  pier.position.set(0, -7.5, 0);
+  t.add(pier);
+  scene.add(t);
+  return { pos: new THREE.Vector3(cx, deckY + 4, cz) };
+}

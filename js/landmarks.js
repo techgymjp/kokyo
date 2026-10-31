@@ -546,25 +546,7 @@ export function addImperialPalace(scene, city) {
   yagura(scene, city, 35.68155, 139.75335, '伏見櫓', 2);
   yagura(scene, city, 35.68290, 139.75580, '富士見櫓', 3);
   yagura(scene, city, 35.67880, 139.75560, '桜田巽櫓', 2);
-  // 二重橋とお濠
-  const water = new THREE.MeshLambertMaterial({ color: 0x3f6f7a });
-  const [BX, BZ] = ll(35.68060, 139.75420);
-  const moat = new THREE.Mesh(new THREE.PlaneGeometry(320, 46), water);
-  moat.rotation.set(-Math.PI / 2, 0, 0.35);
-  moat.position.set(BX, 0.15, BZ);
-  scene.add(moat);
-  const stone = new THREE.MeshLambertMaterial({ color: 0xbdb7aa });
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(14, 3, 56), stone);
-  bridge.rotation.y = 0.35;
-  bridge.position.set(BX, 4, BZ);
-  scene.add(bridge);
-  for (const t of [-1, 1]) {
-    const arch = new THREE.Mesh(new THREE.TorusGeometry(7, 1.6, 6, 16, Math.PI), stone);
-    arch.rotation.y = 0.35 + Math.PI / 2;
-    arch.position.set(BX + Math.sin(0.35) * t * 12, 0, BZ + Math.cos(0.35) * t * 12);
-    scene.add(arch);
-  }
-  city.addBox(BX, BZ, 14, 14, 0, 5.5, '二重橋').roof = true;
+  // 二重橋は 皇居ランナーでは js/landmarks3.js の addNijubashi で作る
   // 江戸城 天守台 (東御苑)
   const [TX, TZ] = ll(35.68800, 139.75570);
   const tensh = new THREE.Mesh(new THREE.CylinderGeometry(22 * Math.SQRT2, 25 * Math.SQRT2, 11, 4), new THREE.MeshLambertMaterial({ color: 0x9a968c }));
