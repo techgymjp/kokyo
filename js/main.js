@@ -25,6 +25,8 @@ const V_DASH = 62 / 3.6;    // ダッシュでこいで出せる速さ (下り�
 const V_WALK = 22 / 3.6;    // 歩道の上
 const G_AMP = 3.5;          // 坂の効き目 (三宅坂の下りで時速80km くらい)
 const DRAG = 0.0022;        // 空気抵抗 (v^2)
+// 当たり判定の左右の幅 (自転車の中心から相手の中心まで)。人は 0.34m、車とバイクは車幅の半分 + 0.05m
+const HIT_PERSON = 0.34, HIT_VEH = 0.05;
 const DASH_DRAIN = 22, DASH_RECOVER = 14; // 体力 (100) の減り方・戻り方 /秒
 
 // ステージ = 時間帯。朝 (ふつう) → 昼 → 夕方 → 夜 の順に人も車も増える。ゴールすると次のステージが開く
@@ -133,11 +135,11 @@ function spawnRunners(d) {
   if (r < 0.2) { addPerson(d, rr(L + 0.5, R - 0.5), rr(1.1, 1.8), 0, { tired: true }); return; }             // 疲れて歩いている
   const n = r < 0.62 ? 1 : r < 0.86 ? 2 : 3;
   const v = n === 1 ? rr(2.0, 4.9) : rr(2.3, 3.6);
-  const w = (n - 1) * 0.72;
+  const w = (n - 1) * 0.62; // 並んで走る間隔 (すり抜けられない)
   const u0 = rr(L + 0.5, Math.max(L + 0.5, R - 0.5 - w));
   if (n === 1) { addPerson(d, u0, v, 0); return; }
   const grp = { tu: u0 + w / 2, drift: rr(3, 9), w };
-  for (let k = 0; k < n; k++) addPerson(d + rr(-0.15, 0.15), u0 + k * 0.72, v, 0, { grp, off: k * 0.72 - w / 2 });
+  for (let k = 0; k < n; k++) addPerson(d + rr(-0.15, 0.15), u0 + k * 0.62, v, 0, { grp, off: k * 0.62 - w / 2 });
 }
 function spawnWalker(d) {
   const L = course.leftEdge(d), Wk = L - WALK_W;
@@ -707,7 +709,8 @@ function step(dt) {
   if (playing) {
     for (const p of game.people) {
       const dd = p.d - P.D, du = p.u - P.U;
-      if (Math.abs(dd) < 1.0 && Math.abs(du) < 0.5) { crash(p.hikyaku ? '飛脚と衝突！' : p.kind === 0 ? 'ランナーと衝突！' : '歩行者と衝突！'); break; }
+      // 当たり判定: 前後はそのまま、左右は緩め (体の端をかすめるくらいはセーフ)
+      if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash(p.hikyaku ? '飛脚と衝突！' : p.kind === 0 ? 'ランナーと衝突！' : '歩行者と衝突！'); break; }
       if (!p.passed && dd < -0.8) {
         p.passed = true;
         game.passed++;
@@ -718,7 +721,7 @@ function step(dt) {
     }
     for (const o of game.vehicles) {
       const dd = o.d - P.D, du = o.u - P.U;
-      if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < 0.3 + o.wid / 2) { crash(o.kind === 'car' ? (o.dir > 0 ? '後ろから来た車にはねられた！' : '車にはねられた！') : 'バイクと衝突！'); break; }
+      if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + HIT_VEH) { crash(o.kind === 'car' ? (o.dir > 0 ? '後ろから来た車にはねられた！' : '車にはねられた！') : 'バイクと衝突！'); break; }
       // 向こうから来る車: 進路に入っていたらクラクション
       if (o.dir < 0 && !o.honk && dd > 0 && dd < 50 && Math.abs(du) < 1.2 + o.wid / 2) { o.honk = true; o.kind === 'car' ? sfx.horn() : sfx.moto(0.3); }
       if (o.dir > 0 && !o.warned && dd < 0 && dd > -55 && Math.abs(du) < 1.5 + o.wid / 2) {
@@ -737,11 +740,11 @@ function step(dt) {
     if (ev && game.state === 'play') {
       for (const m of ev.members) {
         const dd = EVENT_S + m.dd - P.D, du = ev.head + m.off - P.U;
-        if (Math.abs(dd) < 1.0 && Math.abs(du) < 0.5) { crash('井伊直弼の行列に突っこんだ！'); break; }
+        if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash('井伊直弼の行列に突っこんだ！'); break; }
       }
       for (const k of ev.kagos) {
         const dd = EVENT_S - P.D, du = ev.head + k.off - 1.3 - P.U;
-        if (Math.abs(dd) < 1.8 && Math.abs(du) < 2.9) { crash('井伊直弼の馬車に突っこんだ！'); break; }
+        if (Math.abs(dd) < 1.8 && Math.abs(du) < 2.6) { crash('井伊直弼の馬車に突っこんだ！'); break; }
       }
     }
   }
