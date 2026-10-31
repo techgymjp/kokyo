@@ -101,3 +101,26 @@ html:has(body.page) { overflow: auto; height: auto; }
 .doc .route { font-size: 13px; opacity: 0.85; }
 .doc .back { text-align: center; margin-top: 28px; }
 .pop.graze { color: #ffb347; font-size: 22px; }
+
+/* スマホの横画面: 速度と体力は画面のいちばん下 (左右のボタンの間) に小さく横並び。上の表示とミニマップも小さく */
+@media (pointer: coarse) and (orientation: landscape), (max-height: 520px) and (orientation: landscape) {
+  body.touch #hSpeedBox { bottom: max(4px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; padding: 2px 12px; border-radius: 12px; background: rgba(0, 0, 0, 0.35); }
+  body.touch #hSpeed { font-size: 26px; line-height: 1; }
+  body.touch #hSpeedBox small { font-size: 11px; }
+  body.touch .stam .lbl { font-size: 9px; }
+  body.touch .sbar { width: 120px; height: 8px; }
+  body.touch #hTop { top: max(4px, env(safe-area-inset-top)); left: max(6px, env(safe-area-inset-left)); gap: 4px; }
+  body.touch #hTop .box { padding: 3px 8px; min-width: 60px; }
+  body.touch #hTop .box.wide { min-width: 170px; }
+  body.touch #hTime, body.touch #hScore { font-size: 16px; }
+  body.touch #minimap { width: 110px; height: 110px; right: max(6px, env(safe-area-inset-right)); top: max(4px, env(safe-area-inset-top)); }
+  body.touch #hSide { top: 118px; right: max(10px, env(safe-area-inset-right)); font-size: 11px; }
+  body.touch #pauseBtn { top: 52px; left: max(6px, env(safe-area-inset-left)); width: 34px; height: 34px; }
+  body.touch #muteBtn { top: 52px; left: calc(max(6px, env(safe-area-inset-left)) + 40px); width: 34px; height: 34px; }
+  body.touch #touch button { width: 64px; height: 64px; }
+  body.touch #touch .right button { font-size: 12px; white-space: nowrap; letter-spacing: -0.03em; }
+  body.touch #touch .left { left: max(10px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  body.touch #touch .right { right: max(10px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); }
+  #msg { top: 22%; font-size: 24px; }
+  #msg.place { font-size: 28px; }
+}
