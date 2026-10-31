@@ -8,7 +8,7 @@ import { WATER, WATER_LEVEL } from './water-data.js';
 import { LANE_W, CURB_H } from './course.js';
 import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js';
 import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon } from './landmarks3.js';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon } from './landmarks3.js';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -130,6 +130,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const distant = addDistant(scene);
   const castle = addCastleGates(scene, course, G);
   castle.otemon = addOtemon(scene, course, G);
+  castle.sakurada = addSakuradamon(scene, course, G);
   const wake = addWakeNoKiyomaro(scene, course, G);
   castle.hanzo = addHanzomon(scene, course, G);
   place(() => addKusunoki(scene, G));
@@ -939,6 +940,10 @@ function addBalloon(scene, city) {
   const banner = new THREE.Mesh(new THREE.PlaneGeometry(12, 76), new THREE.MeshLambertMaterial({ map: bannerTex, side: THREE.DoubleSide }));
   banner.position.y = BY - BR - 40;
   g.add(banner);
+  // 回っても見えるように、十字にもう1枚
+  const banner2 = banner.clone();
+  banner2.rotation.y = Math.PI / 2;
+  g.add(banner2);
   const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, BY - BR - roof, 4), new THREE.MeshBasicMaterial({ color: 0x555555 }));
   rope.position.set(1.5, roof + (BY - BR - roof) / 2, 0);
   g.add(rope);
@@ -949,7 +954,7 @@ function addBalloon(scene, city) {
     update(t) {
       g.rotation.y = t * 0.08;
       ball.position.x = Math.sin(t * 0.5) * 1.2;
-      banner.position.x = ball.position.x * 0.8;
+      banner.position.x = banner2.position.x = ball.position.x * 0.8;
     },
     setNight(k) { ballMat.emissive.setHex(k === 'night' ? 0x803000 : k === 'dusk' ? 0x4a1c00 : 0x2a1000); },
   };

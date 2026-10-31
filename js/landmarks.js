@@ -611,38 +611,8 @@ export function addPalaceGates(scene, city) {
   const roofM = new THREE.MeshLambertMaterial({ color: 0x3e4448 });
   const dark = new THREE.MeshLambertMaterial({ color: 0x2f2a26 });
   const g = new THREE.Group();
-  // 外桜田門: 渡櫓門 (石垣 + 白い櫓 + 黒い屋根、真ん中に門の口)
-  const [SX, SZ] = ll(35.67760, 139.75225);
-  const rot = 0.6;
-  const w = new THREE.Group();
-  w.position.set(SX, 0, SZ);
-  w.rotation.y = rot;
-  for (const s of [-1, 1]) {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(16, 8, 14), stone);
-    wall.position.set(s * 14, 4, 0);
-    w.add(wall);
-  }
-  const yag = new THREE.Mesh(new THREE.BoxGeometry(46, 6, 11), white);
-  yag.position.y = 11;
-  w.add(yag);
-  const opening = new THREE.Mesh(new THREE.BoxGeometry(12, 8, 11.2), dark);
-  opening.position.y = 4;
-  w.add(opening);
-  const roof = new THREE.Mesh(hipGeo, roofM);
-  roof.scale.set(50, 4, 15);
-  roof.position.y = 16;
-  w.add(roof);
-  g.add(w);
-  const cs = Math.cos(rot), sn = Math.sin(rot);
-  const rect = (lx, lz, ww, dd) => {
-    const c = (ax, az) => [SX + (lx + ax) * cs + (lz + az) * sn, SZ - (lx + ax) * sn + (lz + az) * cs];
-    return [...c(-ww / 2, -dd / 2), ...c(ww / 2, -dd / 2), ...c(ww / 2, dd / 2), ...c(-ww / 2, dd / 2)];
-  };
-  city.addPrism(rect(0, 0, 46, 11), 8, 18, '桜田門').roof = true;
-  city.addPrism(rect(-14, 0, 16, 14), 0, 8, '桜田門');
-  city.addPrism(rect(14, 0, 16, 14), 0, 8, '桜田門');
-  // 手前 (南東) の高麗門
-  koraiGate(g, SX + 22 * sn, SZ + 22 * cs, rot, 8);
+  // 外桜田門は 皇居ランナーでは js/landmarks3.js の addSakuradamon で作る
+  const [SX, SZ] = ll(35.67770, 139.75250);
   // 半蔵門は 皇居ランナーでは js/landmarks3.js の addHanzomon で作る
   const [HX, HZ] = ll(35.68533, 139.74440);
   scene.add(g);

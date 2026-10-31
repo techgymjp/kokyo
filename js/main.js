@@ -100,20 +100,19 @@ const SHOW = [
   // 半蔵門: 近づくところで斜め後ろから (土手の上の門と石垣)
   (() => { const p = [world.castle.hanzo.pos[0], world.castle.hanzo.y + 4, world.castle.hanzo.pos[1]]; const c = closestS(p, lab('千鳥ヶ淵交差点'), lab('国立劇場')); return { name: '半蔵門', mode: 'diag', s0: c - 90, s1: c + 5, p, up: 6, look: 0.45, clear: 18, labelUp: 10 }; })(),
 
-  // 国会議事堂: 正面アングル (議事堂が進行方向のまっすぐ前に来る所で、後ろから議事堂へ目を向けて少し望遠)
+  // 国会議事堂: 桜田門の手前、国会前の交差点で、国会議事堂正門前の通りの奥 (進行方向の後ろ) に見える。このシーンだけ前アングル
   (() => {
     const p = at(...ll(35.67590, 139.74480), 40);
-    let best = lab('国立劇場'), bd = -2;
-    for (let d = lab('国立劇場'); d < lab('桜田門'); d += 4) {
-      const f = course.frame(d), dx = p[0] - f.x, dz = p[2] - f.z, l = Math.hypot(dx, dz);
-      const c = (dx * f.tx + dz * f.tz) / l;
-      if (c > bd) { bd = c; best = d; }
+    let best = lab('三宅坂'), bc = 2;
+    for (let d = lab('三宅坂'); d < lab('桜田門'); d += 4) {
+      const f = course.frame(d), dx = p[0] - f.x, dz = p[2] - f.z;
+      const c = (dx * f.tx + dz * f.tz) / Math.hypot(dx, dz); // -1 がまうしろ
+      if (c < bc) { bc = c; best = d; }
     }
-    // アドバルーンの横アングルの手前まで
-    return { name: '国会議事堂', mode: 'behind', s0: lab('半蔵門') + 30, s1: Math.min(best + 30, balloonSide.c - 50), p, look: 0.85, fov: 38, up: 1.5, clear: 30, labelUp: 34 };
+    return { name: '国会議事堂', mode: 'front', s0: best - 45, s1: best + 45, c: best, p, look: 0.45, fov: 40, up: 3, dist: 10, clear: 30 };
   })(),
   balloonSide,
-  { name: '桜田門', mode: 'behind', s0: lab('桜田門') - 120, s1: lab('桜田門') + 30, p: at(...world.gates.sakurada, 14) },
+  sideAt('桜田門', [world.castle.sakurada.pos[0], world.castle.sakurada.y + 9, world.castle.sakurada.pos[1]], lab('三宅坂'), lab('祝田橋'), 40, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55 }),
   sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.35, up: 4, dist: 30, fov: 13, labelUp: 14 }),
 ].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
 // 見せ場の視線 (カメラ → プレイヤー → 名所) をさえぎる木を取り除く
@@ -951,6 +950,14 @@ function render(dt, time) {
       const sideLook = pl.clone().lerp(sc.o.v, sc.o.look).add(new THREE.Vector3(0, 1.5, 0));
       camPos.lerp(sidePos, showW);
       camLook.lerp(sideLook, showW);
+    } else if (sc.o.mode === 'front') {
+      // 前から: プレイヤーの前に回り込み、自転車越しに後ろの名所を見る
+      const fwd = new THREE.Vector3(f.tx, 0, f.tz);
+      const toL = sc.o.v.clone().sub(pl).setY(0).normalize();
+      const fPos = pl.clone().addScaledVector(fwd, sc.o.dist || 10).addScaledVector(toL, -2).add(new THREE.Vector3(0, sc.o.up || 3, 0));
+      const fLook = pl.clone().lerp(sc.o.v, sc.o.look || 0.4);
+      camPos.lerp(fPos, showW);
+      camLook.lerp(fLook, showW);
     } else if (sc.o.mode === 'diag') {
       // 斜め後ろから: 名所と反対側へ少しずらして高く、プレイヤーの先と名所のあいだを見る
       const fwd = new THREE.Vector3(f.tx, 0, f.tz), right = new THREE.Vector3(-f.tz, 0, f.tx);
@@ -1069,7 +1076,7 @@ loop();
 
 // ---------- 見せ場ツアー ----------
 if (TOUR) {
-  const stops = SHOW.map((o) => ({ name: o.name, mode: o.mode, d: o.mode === 'side' ? o.c - 45 : o.s0 + 20 })).sort((a, b) => a.d - b.d);
+  const stops = SHOW.map((o) => ({ name: o.name, mode: o.mode, d: o.mode === 'side' || o.mode === 'front' ? o.c - 45 : o.s0 + 20 })).sort((a, b) => a.d - b.d);
   let k = 0;
   const go = () => {
     if (game.state !== 'play' && game.state !== 'countdown') { startGame(); game.countdown = 0.05; }
@@ -1081,7 +1088,7 @@ if (TOUR) {
     game.vehicles.length = 0;
     oni.active = false; oni.g.visible = false;
     camInit = false;
-    flash(`見せ場ツアー ${k % stops.length + 1}/${stops.length}: ${st.name}（${st.mode === 'side' ? '横アングル' : '後ろから'}）`, 3, 'warn');
+    flash(`見せ場ツアー ${k % stops.length + 1}/${stops.length}: ${st.name}（${{ side: '横アングル', front: '前アングル', diag: '斜め後ろ', behind: '後ろから' }[st.mode]}）`, 3, 'warn');
     k++;
   };
   setTimeout(() => { go(); setInterval(go, 9000); }, 500);

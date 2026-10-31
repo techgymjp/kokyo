@@ -15,6 +15,7 @@ export const FAMOUS_SITES = [
   [35.68077, 139.75380, 40],  // 正門鉄橋のまわり
   [35.68530, 139.74560, 70],  // 半蔵門のまわり
   [35.68528, 139.74505, 40],  // 半蔵門の土橋
+  [35.67770, 139.75250, 45],  // 外桜田門
 ];
 // 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
 const FAMOUS_LINES = [[35.67976, 139.76524, 35.68296, 139.76684, 70]];
@@ -270,14 +271,18 @@ export function addNijubashi(scene, G, waterLevelAt) {
 
 // ---- 大手門: 内堀通りからお濠を渡る土橋の先に高麗門、その右に石垣の上の大きな白い渡櫓門 (枡形)。両わきは白い塀 ----
 // course: コース (道路の向きと位置に合わせて置く)
-export function addOtemon(scene, course, G) {
-  const [GX, GZ] = ll(35.68630, 139.75905);
+export function addOtemon(scene, course, G) { return addMasugata(scene, course, G, { lat: 35.68630, lon: 139.75905, dist: 58 }); }
+// 外桜田門 (桜田門): 大手門と同じ枡形。交差点の近くで、道路から少し入った所に高麗門
+export function addSakuradamon(scene, course, G) { return addMasugata(scene, course, G, { lat: 35.67770, lon: 139.75250, dist: 34, plain: true }); }
+// 枡形の城門: 土橋の先に高麗門、その右奥に石垣の上の渡櫓門、両わきに白い塀
+function addMasugata(scene, course, G, o) {
+  const [GX, GZ] = ll(o.lat, o.lon);
   const n = course.nearest(GX, GZ, 300);
   const f = course.frame(n.s);
   const roadP = course.world(n.s, course.walkEdge(n.s) - 1);
-  // 高麗門は道路から左 (お濠側) へ 58m。+z が道路の方
+  // 高麗門は道路から左 (お濠側) へ o.dist m。+z が道路の方
   const away = new THREE.Vector3(f.tz, 0, -f.tx); // 道路の左
-  const gx = roadP.x + away.x * 58, gz = roadP.z + away.z * 58;
+  const gx = roadP.x + away.x * o.dist, gz = roadP.z + away.z * o.dist;
   const base = roadP.y;
   const g = new THREE.Group();
   g.position.set(gx, base, gz);
@@ -285,10 +290,11 @@ export function addOtemon(scene, course, G) {
   const stone = M(0x8f8a80), white = M(0xf3f1ea), roofM = M(0x4a5054), dark = M(0x2b2e2c), cap = M(0x5a6064);
   const path = M(0x9a9894), wood = M(0x8a7a64), pine = M(0x3f6a3a);
   // 土橋 (お濠を渡る道) と柵、両わきの刈り込んだ松
-  box(g, 11, 0.6, 52, 0, -0.3, 28, path);
+  const BL = o.dist - 6;
+  box(g, 11, 0.6, BL, 0, -0.3, BL / 2 + 2, path);
   for (const sx of [-1, 1]) {
-    box(g, 0.15, 0.9, 52, sx * 5.3, 0, 28, wood);
-    for (let z = 8; z < 52; z += 9) {
+    box(g, 0.15, 0.9, BL, sx * 5.3, 0, BL / 2 + 2, wood);
+    for (let z = 8; z < BL && !o.plain; z += 9) {
       const p = new THREE.Mesh(new THREE.SphereGeometry(1.5, 10, 8), pine);
       p.scale.set(1.3, 0.75, 1.3);
       p.position.set(sx * 3.8, 1.1, z);
@@ -309,6 +315,14 @@ export function addOtemon(scene, course, G) {
   };
   wall(-48, -4, 3.5);
   wall(4, 13, 3.5);
+  // 枡形: 高麗門の奥を、白い塀 (石垣の上) で四角く囲む。右の辺が渡櫓門
+  box(g, 3.2, 3.5, 32, -14, -0.5, -16, stone);
+  box(g, 0.8, 3, 32, -14, 3, -16, white);
+  box(g, 1.8, 0.5, 32.4, -14, 6, -16, cap);
+  box(g, 28, 3.5, 3.2, 0, -0.5, -32, stone);
+  box(g, 28, 3, 0.8, 0, 3, -32, white);
+  box(g, 28.4, 0.5, 1.8, 0, 6, -32, cap);
+  box(g, 26, 0.2, 30, 0, -0.1, -16, path); // 枡形の中の広場
   // 渡櫓門 (右): 高い石垣の上の白い2階建て、入母屋の屋根。妻 (三角の面) が道路の方を向く
   box(g, 22, 8, 40, 24, -0.5, -16, stone);
   box(g, 20, 8.5, 37, 24, 7.5, -16, white);

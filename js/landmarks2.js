@@ -214,6 +214,13 @@ export function addTokyoStation(scene, city) {
     mesh(new THREE.ConeGeometry(1.5, 6, 8), roofM, 0, 39, t, g);
   }
   mesh(new THREE.BoxGeometry(26, 26, 30), body, 0, 13, 0, g);
+  // 中央口: 黒い大きな屋根 (写真の形) と、両わきの白い石の塔
+  const cr = mesh(hipGeo, roofM, 0, 33, 0, g);
+  cr.scale.set(30, 14, 36);
+  for (const t of [-17, 17]) {
+    mesh(new THREE.BoxGeometry(14, 30, 8), M(0xe8e2d6), 0, 15, t, g);
+    mesh(new THREE.SphereGeometry(4, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), roofM, 0, 30, t, g);
+  }
   scene.add(g);
   const pts = rectPts(X, Z, rot, 0, 0, 22, L);
   city.addPrism(pts, 0, 21, '東京駅 丸の内駅舎').roof = true;
