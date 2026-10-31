@@ -141,8 +141,8 @@ function spawnRunners(d) {
   const w = (n - 1) * 0.62; // 並んで走る間隔 (すり抜けられない)
   const u0 = rr(L + 0.5, Math.max(L + 0.5, R - 0.5 - w));
   if (n === 1) { addPerson(d, u0, v, 0); return; }
-  const grp = { tu: u0 + w / 2, drift: rr(3, 9), w };
-  for (let k = 0; k < n; k++) addPerson(d + rr(-0.15, 0.15), u0 + k * 0.62, v, 0, { grp, off: k * 0.62 - w / 2 });
+  const grp = { tu: u0 + w / 2, drift: rr(3, 9), w, members: [] };
+  for (let k = 0; k < n; k++) grp.members.push(addPerson(d + rr(-0.15, 0.15), u0 + k * 0.62, v, 0, { grp, off: k * 0.62 - w / 2 }));
 }
 function spawnWalker(d) {
   const L = course.leftEdge(d), Wk = L - WALK_W;
@@ -725,6 +725,15 @@ function step(dt) {
     for (const p of game.people) {
       const dd = p.d - P.D, du = p.u - P.U;
       // 当たり判定: 前後はそのまま、左右は緩め (体の端をかすめるくらいはセーフ)
+      // 2人組・3人組の間をすり抜けたときは、衝突ではなく「かすった」(組の全員と、1回だけ)
+      if (p.grp && Math.abs(dd) < 1.0) {
+        const us = p.grp.members.map((q) => q.u);
+        if (P.U > Math.min(...us) && P.U < Math.max(...us)) {
+          if (!p.grp.grazed) { p.grp.grazed = true; for (const q of p.grp.members) q.grazed = false; graze(p); }
+          for (const q of p.grp.members) q.grazed = true;
+          continue;
+        }
+      }
       if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash(p.hikyaku ? '飛脚と衝突！' : p.kind === 0 ? 'ランナーと衝突！' : '歩行者と衝突！'); break; }
       if (Math.abs(dd) < 1.0 && Math.abs(du) < GRAZE_PERSON) graze(p);
       if (!p.passed && dd < -0.8) {
