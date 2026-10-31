@@ -454,6 +454,9 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 1700;
       const x = CX + Math.cos(a) * r, z = CZ + Math.sin(a) * r;
       if (!isGreen(x, z) || waterInfo.levelAt(x, z) !== null || insideBuilding(x, z) || course.onRoad(x, z, 2.5)) continue;
+      // 301号の街側の歩道ぎわにも植えない
+      const nr = course.nearest(x, z, 30);
+      if (nr && course.oneway(nr.s) && nr.u > 0 && nr.u < 3.5 + 12) continue;
       pts.push([x, z, rnd(), 0]);
     }
     // 皇居前広場の芝生には黒松をたくさん
@@ -462,9 +465,11 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       const x = QX0 + rnd() * (QX1 - QX0), z = QZ0 + rnd() * (QZ1 - QZ0);
       if (isGreen(x, z) && !course.onRoad(x, z, 2)) pts.push([x, z, rnd(), 1]);
     }
-    // 沿道: お濠側は松と桜 (千鳥ヶ淵・半蔵門は桜並木)、街側は銀杏 (10月の終わりなので黄色くなりはじめ)
+    // 沿道: お濠側は松と桜 (千鳥ヶ淵・半蔵門は桜並木)、街側は銀杏 (10月の終わりなので黄色くなりはじめ)。
     const chidori = course.labels.find((l) => l.name === '九段坂上'), hanzo = course.labels.find((l) => l.name === '半蔵門');
+    // 都道301号 (一方通行の区間) には街路樹がない
     for (let d = 0; d < course.L; d += 9 + rnd() * 5) {
+      if (course.oneway(d)) continue;
       const ul = course.walkEdge(d) - 2.4 - rnd() * 2;
       const pl = course.world(d, ul);
       const sakura = d > chidori.s && d < hanzo.s + 150;
@@ -500,7 +505,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     const m4 = new THREE.Matrix4(), col = new THREE.Color();
     pts.forEach(([x, z, r, kind, yy], i) => {
       const y = yy !== undefined ? yy : G(x, z);
-      const sc = kind === 3 ? 3 + r * 1.5 : 4 + r * 5;
+      const sc = kind === 3 ? 2.2 + r * 1.1 : 2.6 + r * 3.2; // 樹冠の大きさ (公園の木は直径およそ5〜11m)
       if (kind === 1) {
         // 黒松 (段になった平たい葉のかたまり、濃い緑)。幹は少し傾ける
         const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, r * 6.28, 0));

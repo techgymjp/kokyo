@@ -562,14 +562,19 @@ function step(dt) {
     if (P.v < cruise) a += Math.min((cruise - P.v) * 3, 1 + 2 * (1 - P.v / cruise));
     const wantDash = dashInput() && !brakeInput();
     if (!wantDash) P.dashLock = false;
-    const dashing = wantDash && P.stamina > 0 && !P.dashLock;
+    // ダッシュ: 時速40km までの加速は体力を使わない (体力ゼロでもできる)。40km を超えて速くするときだけ体力を使う
+    const vmax = onWalk ? V_WALK * 1.3 : V_DASH;
+    const free = P.v < V_CRUISE;
+    const dashing = wantDash && P.v < vmax && (free || (P.stamina > 0 && !P.dashLock));
     if (dashing) {
-      P.stamina = Math.max(0, P.stamina - DASH_DRAIN * dt);
-      if (P.stamina <= 0) { P.dashLock = true; flash('体力ぎれ！ ダッシュを離して回復', 1.2); }
-      const vmax = onWalk ? V_WALK * 1.3 : V_DASH;
-      if (P.v < vmax) a += 3.2;
-    } else if (!wantDash) P.stamina = Math.min(100, P.stamina + DASH_RECOVER * dt);
-    game.dashing = dashing;
+      a += 3.2;
+      if (!free) {
+        P.stamina = Math.max(0, P.stamina - DASH_DRAIN * dt);
+        if (P.stamina <= 0) { P.dashLock = true; flash('体力ぎれ！ ダッシュを離して回復', 1.2); }
+      }
+    }
+    if (!(dashing && !free)) P.stamina = Math.min(100, P.stamina + DASH_RECOVER * dt);
+    game.dashing = dashing && !free;
     const grade = course.grade(P.D);
     a -= 9.8 * grade * G_AMP;
     a -= DRAG * P.v * P.v + 0.05;
