@@ -93,11 +93,12 @@ const SHOW = [
   sideAt('和気清麻呂像', [world.wake.pos[0], world.wake.y + 10, world.wake.pos[1]], lab('大手門'), lab('竹橋'), 35, { clear: 12, look: 0.25, dist: 9, up: 2.5, fov: 55, labelUp: 6 }),
   sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),
   // 九段坂を上がるところ: 斜め後ろから武道館
-  { name: '日本武道館', mode: 'diag', s0: lab('九段下') + 20, s1: lab('田安門') - 60, p: at(...world.budokan.pos, 30) },
+  { name: '日本武道館', mode: 'diag', s0: lab('九段下') + 20, s1: lab('田安門') - 60, p: at(...world.budokan.pos, 30), up: 10, look: 0.4, clear: 22 },
   sideAt('日本武道館', at(...world.budokan.pos, 30), lab('九段下'), lab('九段坂上'), 60, { dist: 16, up: 4, fov: 50, clear: 30 }), // 田安門の前で横から
   sideAt('千鳥ヶ淵', chidoriView, lab('九段坂上'), lab('千鳥ヶ淵交差点'), 60, { dist: 10, up: 3.5, look: 0.35, fov: 62, labelUp: 14 }),
-  sideAt('半蔵門', at(...world.gates.hanzo, 6), lab('千鳥ヶ淵交差点'), lab('国立劇場'), 45),
-  sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 13, look: 0.22, up: 0.8, labelUp: 30 }),
+  // 半蔵門: 近づくところで斜め後ろから (土手の上の門と石垣)
+  (() => { const p = [world.castle.hanzo.pos[0], world.castle.hanzo.y + 4, world.castle.hanzo.pos[1]]; const c = closestS(p, lab('千鳥ヶ淵交差点'), lab('国立劇場')); return { name: '半蔵門', mode: 'diag', s0: c - 90, s1: c + 5, p, up: 6, look: 0.45, clear: 18, labelUp: 10 }; })(),
+  sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.3, up: 9, fov: 62, labelUp: 30 }),
   sideAt('国会議事堂', at(...ll(35.67590, 139.74480), 40), lab('国立劇場'), lab('桜田門'), 70, { clear: 40, look: 0.1, up: 10, dist: 30, fov: 36, labelUp: 34 }),
   { name: '桜田門', mode: 'behind', s0: lab('桜田門') - 120, s1: lab('桜田門') + 30, p: at(...world.gates.sakurada, 14) },
   sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.35, up: 4, dist: 30, fov: 13, labelUp: 14 }),
@@ -547,7 +548,7 @@ function graze(o) {
 
 function crash(by) {
   if (game.state !== 'play') return;
-  if (TOUR) return;
+  if (TOUR || location.search.includes('nocrash')) return;
   game.state = 'crash';
   game.crashBy = by;
   game.crashT = 0;
@@ -942,8 +943,8 @@ function render(dt, time) {
       const fwd = new THREE.Vector3(f.tx, 0, f.tz), right = new THREE.Vector3(-f.tz, 0, f.tx);
       const toL = sc.o.v.clone().sub(pl).setY(0);
       const side = toL.dot(right) > 0 ? -1 : 1;
-      const dPos = pl.clone().addScaledVector(fwd, -8).addScaledVector(right, side * 6).add(new THREE.Vector3(0, 4.5, 0));
-      const dLook = pl.clone().addScaledVector(fwd, 12).lerp(sc.o.v, 0.3);
+      const dPos = pl.clone().addScaledVector(fwd, -8).addScaledVector(right, side * 6).add(new THREE.Vector3(0, sc.o.up || 4.5, 0));
+      const dLook = pl.clone().addScaledVector(fwd, 12).lerp(sc.o.v, sc.o.look || 0.3);
       camPos.lerp(dPos, showW);
       camLook.lerp(dLook, showW);
     } else {

@@ -643,17 +643,8 @@ export function addPalaceGates(scene, city) {
   city.addPrism(rect(14, 0, 16, 14), 0, 8, '桜田門');
   // 手前 (南東) の高麗門
   koraiGate(g, SX + 22 * sn, SZ + 22 * cs, rot, 8);
-  // 半蔵門: 高麗門と両側の石垣
+  // 半蔵門は 皇居ランナーでは js/landmarks3.js の addHanzomon で作る
   const [HX, HZ] = ll(35.68533, 139.74440);
-  const hrot = 1.15;
-  koraiGate(g, HX, HZ, hrot, 9);
-  const hs = Math.sin(hrot), hc = Math.cos(hrot);
-  for (const s of [-1, 1]) {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(30, 7, 10), stone);
-    wall.position.set(HX + s * 22 * hc, 3.5, HZ - s * 22 * hs);
-    wall.rotation.y = hrot;
-    g.add(wall);
-  }
   scene.add(g);
   return { sakurada: [SX, SZ], hanzo: [HX, HZ] };
 }

@@ -184,7 +184,8 @@ export function addOchanomizu(scene, city) {
 
 // ---------- 東京駅 丸の内駅舎: 赤レンガの3階建て (約335m) と南北のドーム ----------
 export function addTokyoStation(scene, city) {
-  const [AX, AZ] = ll(35.67960, 139.76630), [BX, BZ] = ll(35.68280, 139.76790);
+  // 皇居ランナー: 実際の駅舎の位置 (PLATEAU の駅舎の箱と同じ所) に合わせて西へ約100m 動かした
+  const [AX, AZ] = ll(35.67976, 139.76524), [BX, BZ] = ll(35.68296, 139.76684);
   const X = (AX + BX) / 2, Z = (AZ + BZ) / 2;
   const L = 335, rot = Math.atan2(BX - AX, BZ - AZ);
   const brick = canvasTex(512, 128, (c, w, h) => {

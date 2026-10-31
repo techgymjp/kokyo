@@ -13,7 +13,7 @@ export const FAMOUS_SITES = [
   [35.67580, 139.75285, 55],  // 法務省 赤れんが棟
 ];
 // 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
-const FAMOUS_LINES = [[35.67960, 139.76630, 35.68280, 139.76790, 24]];
+const FAMOUS_LINES = [[35.67976, 139.76524, 35.68296, 139.76684, 70]];
 export function hideFamousSites(city) {
   for (const [lat, lon, r] of FAMOUS_SITES) {
     const [X, Z] = ll(lat, lon);
@@ -329,4 +329,71 @@ export function addWakeNoKiyomaro(scene, course, G) {
   shaku.position.set(0, 10.4, 0.9); shaku.rotation.x = -0.3; g.add(shaku);
   scene.add(g);
   return { pos: [p.x, p.z], y: p.y };
+}
+
+// ---- 半蔵門: 内堀通りから土橋の道がまっすぐ奥へ。両わきは生け垣と松、奥に黒い木の高麗門と白い塀。道路ぎわに茶色い屋根の詰所 ----
+export function addHanzomon(scene, course, G) {
+  // 門は実際の位置 (二つのお濠のあいだの土手を渡った先)。土手の道は内堀通りから門までまっすぐ
+  const [GX, GZ] = ll(35.68530, 139.74560);
+  const n = course.nearest(GX, GZ, 400);
+  const roadP = course.world(n.s, course.walkEdge(n.s) - 0.5);
+  const D = Math.hypot(GX - roadP.x, GZ - roadP.z); // 門までの距離 (約100m)
+  const g = new THREE.Group();
+  g.position.set(roadP.x, roadP.y, roadP.z);
+  g.rotation.y = Math.atan2(GX - roadP.x, GZ - roadP.z); // +z が門の方
+  const path = M(0xa8a59c), pine = M(0x2f5a32), dark = M(0x2a2622), roofM = M(0x3a3e40), white = M(0xf0eee6);
+  const brown = M(0x7a4a32), wallC = M(0xd9d2c2), glass = M(0x5a6a72), lawn = M(0x7aa64e), fenceM = M(0x5a3a28), bush = M(0x5c8f3e);
+  const tree = M(0x355f34);
+  // 土手 (二つのお濠のあいだ): 上は芝生、両側はお濠へ下る芝生の斜面
+  box(g, 26, 0.3, D, 0, -0.35, D / 2, lawn);
+  for (const sx of [-1, 1]) {
+    const slope = new THREE.Mesh(new THREE.PlaneGeometry(24, D + 20), lawn);
+    slope.rotation.set(-Math.PI / 2, 0, 0);
+    slope.rotateY(sx * 0.62);
+    slope.position.set(sx * (13 + 9.5), -7, D / 2 + 6);
+    slope.material.side = THREE.DoubleSide;
+    g.add(slope);
+  }
+  box(g, 11, 0.4, D, 0, -0.2, D / 2, path);
+  // 道路ぎわの茶色い鉄柵の門
+  box(g, 12, 0.12, 0.12, 0, 1.6, 2.5, fenceM);
+  box(g, 12, 0.12, 0.12, 0, 0.4, 2.5, fenceM);
+  for (let x = -6; x <= 6; x += 1) box(g, 0.08, 1.6, 0.08, x, 0, 2.5, fenceM);
+  for (const sx of [-1, 1]) {
+    box(g, 10, 1.8, 0.12, sx * 11, 0, 2.5, fenceM);
+    // 道の両わきの丸く刈り込んだ植え込み
+    for (let z = 8; z < D - 6; z += 3.2) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(1.9, 10, 8), bush);
+      b.scale.set(1, 0.85, 1.1);
+      b.position.set(sx * 9, 1.1, z);
+      g.add(b);
+    }
+    // 門の両わき: 木の茂った土手と、白い塀
+    box(g, 30, 7, 18, sx * 21, -0.5, D + 6, M(0x4e7a3c));
+    for (let k = 0; k < 5; k++) {
+      const t = new THREE.Mesh(new THREE.IcosahedronGeometry(6 + (k % 2) * 2, 1), tree);
+      t.scale.set(1, 1.1, 1);
+      t.position.set(sx * (12 + k * 5), 13 + (k % 3), D + 4 + (k % 2) * 6);
+      g.add(t);
+    }
+    // 門の左右の石垣 (左は高く長い)
+    box(g, sx < 0 ? 34 : 14, sx < 0 ? 6 : 4, 3, sx * (sx < 0 ? 21 : 11), -2, D - 2, M(0x7d786e));
+    box(g, 16, 3.2, 0.8, sx * 12, 0, D - 0.5, white);
+    box(g, 16.6, 0.5, 1.6, sx * 12, 3.2, D - 0.5, roofM);
+  }
+  // 高麗門 (黒い木の柱と扉、本瓦の屋根) と、その奥の大きな木
+  for (const sx of [-1, 1]) box(g, 1.0, 5.8, 1.0, sx * 3, 0, D, dark);
+  box(g, 7.8, 0.8, 1.2, 0, 5.8, D, dark);
+  box(g, 5.6, 4.6, 0.3, 0, 0, D + 0.2, dark);
+  const kr = new THREE.Mesh(hipGeo, roofM);
+  kr.scale.set(10, 2.2, 4.8); kr.position.set(0, 7.6, D); g.add(kr);
+  const big = new THREE.Mesh(new THREE.IcosahedronGeometry(11, 1), tree);
+  big.position.set(4, 15, D + 18); g.add(big);
+  // 道路ぎわの詰所 (茶色の寄棟屋根)
+  box(g, 7, 3, 6, -11, 0, -2, wallC);
+  box(g, 7.05, 1.3, 6.05, -11, 1.2, -2, glass);
+  const r = new THREE.Mesh(hipGeo, brown);
+  r.scale.set(10.5, 3.2, 9); r.position.set(-11, 4.6, -2); g.add(r);
+  scene.add(g);
+  return { pos: [GX, GZ], y: roadP.y };
 }
