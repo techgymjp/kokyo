@@ -89,7 +89,7 @@ const sideAt = (name, p, a, b, half = 55, opt = {}) => { const c = closestS(p, a
 const chidoriView = (() => { const d = lab('千鳥ヶ淵') - 40; const p = course.world(d, course.walkEdge(d) - 70); return [p.x, p.y - 2, p.z]; })();
 const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.5, up: 16, fov: 70, labelUp: 75 });
 const SHOW = [
-  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 14, look: 0.2, fov: 30, labelUp: 26, clear: 21 }),
+  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 60, up: 7, look: 0.1, fov: 16, labelUp: 26, clear: 21 }), // 引いた所から望遠で、自転車と駅舎を重ねる
   sideAt('大手門', [world.castle.otemon.pos[0], world.castle.otemon.y + 8, world.castle.otemon.pos[1]], lab('和田倉門'), lab('竹橋'), 45, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55, labelUp: 16 }),
   sideAt('和気清麻呂像', [world.wake.pos[0], world.wake.y + 10, world.wake.pos[1]], lab('大手門'), lab('竹橋'), 35, { clear: 12, look: 0.25, dist: 9, up: 2.5, fov: 55, labelUp: 6 }),
   sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),
