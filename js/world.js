@@ -8,7 +8,7 @@ import { WATER, WATER_LEVEL } from './water-data.js';
 import { LANE_W, CURB_H } from './course.js';
 import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js';
 import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js';
-import { hideFamousSites, addFamous, addNijubashi } from './landmarks3.js';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro } from './landmarks3.js';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -129,6 +129,8 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const fuji = addFuji(scene);
   const distant = addDistant(scene);
   const castle = addCastleGates(scene, course, G);
+  castle.otemon = addOtemon(scene, course, G);
+  const wake = addWakeNoKiyomaro(scene, course, G);
   place(() => addKusunoki(scene, G));
   const famous = addFamous(scene, G);
 
@@ -449,6 +451,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
 
   // ---------- 木 ----------
   let clearTrees = () => {};
+  const gyokoLamps = [];
   const insideBuilding = (x, z) => { const l = city.cell(x, z); if (l) for (const bd of l) if (bd.plateau && city.inside(bd, x, z)) return true; return false; };
   {
     const img = groundCanvas.getContext('2d').getImageData(0, 0, GW, GH).data;
@@ -487,6 +490,21 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       const ur = course.rightEdge(d) + 3.5 + 1.2;
       const pr = course.world(d, ur);
       if (rnd() < 0.8 && waterInfo.levelAt(pr.x, pr.z) === null && !insideBuilding(pr.x, pr.z)) pts.push([pr.x, pr.z, rnd(), 3, pr.y]);
+    }
+    // 行幸通り: 和田倉門から東京駅へまっすぐ。両側に銀杏並木と街灯 (真ん中は駅舎が見えるように空ける)
+    {
+      const [SX, SZ] = tstation.pos;
+      const n = course.nearest(SX, SZ, 1000) || null;
+      let best = 0, bd = 1e18;
+      for (let d = 0; d < 800; d += 2) { const f = course.frame(d); const q = (f.x - SX) ** 2 + (f.z - SZ) ** 2; if (q < bd) { bd = q; best = d; } }
+      void n;
+      const a = course.world(best, course.rightEdge(best) + 8), L = Math.hypot(SX - a.x, SZ - a.z);
+      const ux = (SX - a.x) / L, uz = (SZ - a.z) / L;
+      for (let t = 0; t < L - 40; t += 11) for (const side of [-1, 1]) for (const off of [24, 30]) {
+        const x = a.x + ux * t - uz * side * off, z = a.z + uz * t + ux * side * off;
+        if (!insideBuilding(x, z)) pts.push([x, z, rnd(), 3, G(x, z)]);
+        if (off === 24 && Math.floor(t / 11) % 2 === 0) gyokoLamps.push([x - uz * side * -3, z + ux * side * -3]);
+      }
     }
     const crown = new THREE.IcosahedronGeometry(1, 0);
     crown.translate(0, 1.6, 0);
@@ -573,6 +591,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   {
     const list = [];
     for (let d = 5; d < course.L; d += 32) list.push(course.world(d, course.walkEdge(d) + 0.5));
+    for (const [x, z] of gyokoLamps) list.push({ x, y: G(x, z), z });
     const pole = new THREE.CylinderGeometry(0.07, 0.1, 5, 6);
     pole.translate(0, 2.5, 0);
     const head = new THREE.SphereGeometry(0.32, 10, 8);
@@ -638,7 +657,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   // スタート地点のまわりのタイルを先に組み立てる
   function prebuild(x, z) { while (city.streamTiles(x, z, 900, 4) > 0); }
 
-  return { nijubashi, famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
+  return { wake, nijubashi, famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
 }
 
 // コースの道路のメッシュ
@@ -811,7 +830,7 @@ function addCastleGates(scene, course, G) {
     g.add(b);
     return [X, Z, rot];
   };
-  const otemon = gate(35.68645, 139.75890, 8, true);   // 大手門
+  // 大手門は addOtemon (landmarks3.js) で作る
   const hirakawa = gate(35.68895, 139.75730, 6, true);   // 平川門
   // 平川橋: 内堀通りからお濠を渡って平川門へ行く木の橋 (擬宝珠の欄干)
   {
@@ -853,7 +872,7 @@ function addCastleGates(scene, course, G) {
   gate(35.69380, 139.74995, 7, true);   // 田安門
   gate(35.68220, 139.75700, 6, false);  // 坂下門
   scene.add(g);
-  return { hirakawa: [hirakawa[0], hirakawa[1]], otemon: [otemon[0], otemon[1]] };
+  return { hirakawa: [hirakawa[0], hirakawa[1]] };
 }
 
 // 楠木正成像 (皇居外苑): 台座の上の騎馬像

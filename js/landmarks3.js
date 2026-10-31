@@ -243,3 +243,90 @@ export function addNijubashi(scene, G, waterLevelAt) {
   scene.add(t);
   return { pos: new THREE.Vector3(cx, deckY + 4, cz) };
 }
+
+// ---- 大手門: 内堀通りからお濠を渡る土橋の先に高麗門、その右に石垣の上の大きな白い渡櫓門 (枡形)。両わきは白い塀 ----
+// course: コース (道路の向きと位置に合わせて置く)
+export function addOtemon(scene, course, G) {
+  const [GX, GZ] = ll(35.68630, 139.75905);
+  const n = course.nearest(GX, GZ, 300);
+  const f = course.frame(n.s);
+  const roadP = course.world(n.s, course.walkEdge(n.s) - 1);
+  // 高麗門は道路から左 (お濠側) へ 58m。+z が道路の方
+  const away = new THREE.Vector3(f.tz, 0, -f.tx); // 道路の左
+  const gx = roadP.x + away.x * 58, gz = roadP.z + away.z * 58;
+  const base = roadP.y;
+  const g = new THREE.Group();
+  g.position.set(gx, base, gz);
+  g.rotation.y = Math.atan2(-away.x, -away.z);
+  const stone = M(0x8f8a80), white = M(0xf3f1ea), roofM = M(0x4a5054), dark = M(0x2b2e2c), cap = M(0x5a6064);
+  const path = M(0x9a9894), wood = M(0x8a7a64), pine = M(0x3f6a3a);
+  // 土橋 (お濠を渡る道) と柵、両わきの刈り込んだ松
+  box(g, 11, 0.6, 52, 0, -0.3, 28, path);
+  for (const sx of [-1, 1]) {
+    box(g, 0.15, 0.9, 52, sx * 5.3, 0, 28, wood);
+    for (let z = 8; z < 52; z += 9) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(1.5, 10, 8), pine);
+      p.scale.set(1.3, 0.75, 1.3);
+      p.position.set(sx * 3.8, 1.1, z);
+      g.add(p);
+    }
+  }
+  // 高麗門 (2本の太い柱と冠木、本瓦の屋根)。扉は開いている
+  for (const sx of [-1, 1]) box(g, 1.1, 6.2, 1.1, sx * 3.2, 0, 0, dark);
+  box(g, 8.4, 0.9, 1.3, 0, 6.2, 0, dark);
+  const kr = new THREE.Mesh(hipGeo, roofM);
+  kr.scale.set(11, 2.4, 5.2); kr.position.set(0, 8.3, 0); g.add(kr);
+  // 両わきの石垣と白い塀 (瓦の笠)
+  const wall = (x0, x1, h) => {
+    const w = Math.abs(x1 - x0), cx = (x0 + x1) / 2;
+    box(g, w, h, 3.2, cx, -0.5, -0.8, stone);
+    box(g, w, 3, 0.8, cx, h - 0.5, -0.8, white);
+    box(g, w + 0.4, 0.5, 1.8, cx, h + 2.5, -0.8, cap);
+  };
+  wall(-48, -4, 3.5);
+  wall(4, 13, 3.5);
+  // 渡櫓門 (右): 高い石垣の上の白い2階建て、入母屋の屋根。妻 (三角の面) が道路の方を向く
+  box(g, 22, 8, 40, 24, -0.5, -16, stone);
+  box(g, 20, 8.5, 37, 24, 7.5, -16, white);
+  for (let z = -30; z <= -2; z += 7) box(g, 20.2, 1.2, 1.4, 24, 12, z, dark); // 窓
+  const yr = new THREE.Mesh(hipGeo, roofM);
+  yr.scale.set(25, 6.5, 43); yr.position.set(24, 19.2, -16); g.add(yr);
+  const gable = new THREE.Mesh(new THREE.ConeGeometry(6, 4, 3), white);
+  gable.rotation.set(Math.PI / 2, 0, 0); gable.scale.set(1.2, 0.2, 1); gable.position.set(24, 19.5, 5.3);
+  g.add(gable);
+  // 渡櫓門の先の石垣 (右へ続く)
+  box(g, 30, 6.5, 4, 50, -0.5, 2, stone);
+  scene.add(g);
+  return { pos: [gx, gz], y: base };
+}
+
+// ---- 和気清麻呂像 (大手濠緑地): 高い石の台座の上に、束帯姿で笏を持って立つ銅像 ----
+export function addWakeNoKiyomaro(scene, course, G) {
+  const [WX, WZ] = ll(35.68760, 139.76040);
+  const n = course.nearest(WX, WZ, 300);
+  const p = course.world(n.s, course.walkEdge(n.s) - 9);
+  const g = new THREE.Group();
+  g.position.set(p.x, p.y, p.z);
+  g.rotation.y = p.yaw - Math.PI / 2; // 道路の方を向く
+  const granite = M(0xb7b2a8), bronze = M(0x3c4a3e);
+  box(g, 6, 1, 6, 0, 0, 0, granite);
+  box(g, 4, 5.5, 4, 0, 1, 0, granite);
+  box(g, 4.6, 0.6, 4.6, 0, 6.5, 0, granite);
+  // 袍 (すそが広がった衣) と体
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 1.35, 3.0, 12), bronze);
+  robe.position.set(0, 8.6, 0); g.add(robe);
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.8, 1.3, 12), bronze);
+  chest.position.set(0, 10.6, 0); g.add(chest);
+  for (const sx of [-1, 1]) {
+    const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.9, 1.1), bronze);
+    sleeve.position.set(sx * 0.95, 10.0, 0.25); sleeve.rotation.x = -0.25; g.add(sleeve);
+  }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), bronze);
+  head.position.set(0, 11.75, 0); g.add(head);
+  const kanmuri = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.9, 0.55), bronze);
+  kanmuri.position.set(0, 12.45, -0.05); g.add(kanmuri);
+  const shaku = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.05), bronze);
+  shaku.position.set(0, 10.4, 0.9); shaku.rotation.x = -0.3; g.add(shaku);
+  scene.add(g);
+  return { pos: [p.x, p.z], y: p.y };
+}
