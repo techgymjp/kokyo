@@ -17,6 +17,7 @@ export const FAMOUS_SITES = [
   [35.68528, 139.74505, 40],  // 半蔵門の土橋
   [35.67770, 139.75250, 45],  // 外桜田門
   [35.69332, 139.74983, 190], // 日本武道館のまわり (両隣の建物を描かない)
+  [35.68602, 139.75962, 75],  // 大手門 (PLATEAU の高麗門・渡櫓門・塀は手作りに置き換える)
 ];
 // 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
 const FAMOUS_LINES = [[35.67976, 139.76524, 35.68296, 139.76684, 70]];
@@ -284,7 +285,8 @@ export function addNijubashi(scene, G, waterLevelAt) {
 
 // ---- 大手門: 内堀通りからお濠を渡る土橋の先に高麗門、その右に石垣の上の大きな白い渡櫓門 (枡形)。両わきは白い塀 ----
 // course: コース (道路の向きと位置に合わせて置く)
-export function addOtemon(scene, course, G) { return addMasugata(scene, course, G, { lat: 35.68630, lon: 139.75905, dist: 58 }); }
+// 位置は PLATEAU の大手門の建物 (渡櫓門) の所。道路からの距離は実際の位置から計算する
+export function addOtemon(scene, course, G) { return addMasugata(scene, course, G, { lat: 35.68602, lon: 139.75962 }); }
 // 外桜田門 (桜田門): 大手門と同じ枡形。交差点の近くで、道路から少し入った所に高麗門
 export function addSakuradamon(scene, course, G) { return addMasugata(scene, course, G, { lat: 35.67770, lon: 139.75250, dist: 34, plain: true }); }
 // 枡形の城門: 土橋の先に高麗門、その右奥に石垣の上の渡櫓門、両わきに白い塀
@@ -295,6 +297,7 @@ function addMasugata(scene, course, G, o) {
   const roadP = course.world(n.s, course.walkEdge(n.s) - 1);
   // 高麗門は道路から左 (お濠側) へ o.dist m。+z が道路の方
   const away = new THREE.Vector3(f.tz, 0, -f.tx); // 道路の左
+  if (!o.dist) o.dist = Math.max(30, (GX - roadP.x) * away.x + (GZ - roadP.z) * away.z);
   const gx = roadP.x + away.x * o.dist, gz = roadP.z + away.z * o.dist;
   const base = roadP.y;
   const g = new THREE.Group();

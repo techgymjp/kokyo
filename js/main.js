@@ -368,6 +368,33 @@ function strike(big) {
   try { if (navigator.vibrate) navigator.vibrate(big ? 200 : 60); } catch (e) { /* 振動できない端末 */ }
 }
 
+// ---------- 水しぶき (お濠に飛びこんだ車) ----------
+const splashes = [];
+const splashGeo = new THREE.SphereGeometry(1, 8, 6);
+const splashMat = new THREE.MeshBasicMaterial({ color: 0xeaf6ff, transparent: true, opacity: 0.85 });
+function splash(x, y, z, dist) {
+  for (let i = 0; i < 26; i++) {
+    const m = new THREE.Mesh(splashGeo, splashMat.clone());
+    m.position.set(x + (Math.random() - 0.5) * 2, y, z + (Math.random() - 0.5) * 2);
+    const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 4;
+    m.userData = { vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: 5 + Math.random() * 7, t: 0, y0: y };
+    m.scale.setScalar(0.3 + Math.random() * 0.5);
+    scene.add(m);
+    splashes.push(m);
+  }
+  if (dist < 250) { sfx.burst(0.9, 1400, 200, Math.min(0.6, 40 / Math.max(20, dist)), 'lowpass', 0.8); sfx.tone(70, 0.4, 0.25, 'sine', 0.5); }
+  if (dist < 150) popup('ドボン！', 'graze');
+}
+function updateSplashes(dt) {
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    const m = splashes[i], u = m.userData;
+    u.t += dt; u.vy -= 14 * dt;
+    m.position.x += u.vx * dt; m.position.y += u.vy * dt; m.position.z += u.vz * dt;
+    m.material.opacity = Math.max(0, 0.85 - u.t * 0.6);
+    if (u.t > 1.5 || m.position.y < u.y0 - 0.5) { scene.remove(m); m.material.dispose(); splashes.splice(i, 1); }
+  }
+}
+
 // ---------- 雪 (桜田門外の変は雪の日だった) ----------
 const snow = (() => {
   const N = isTouch ? 1200 : 2500;
@@ -635,9 +662,13 @@ const mini = (() => {
         ctx.fillRect((p.x - x0) * S - 2, (p.z - z0) * S - 2, 4, 4);
       }
       ctx.restore();
-      // 自分 (青い矢印)
+      // 自分
       ctx.fillStyle = '#1e6bff';
-      ctx.beginPath(); ctx.moveTo(W / 2, H / 2 + 18); ctx.lineTo(W / 2 - 10, H / 2 + 40); ctx.lineTo(W / 2 + 10, H / 2 + 40); ctx.fill();
+      // 自分 (青い丸): このあたりを走っている、という目印
+      ctx.beginPath(); ctx.arc(W / 2, H / 2 + 30, 11, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(30,107,255,0.35)'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#1e6bff'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(W / 2, H / 2 + 30, 4, 0, Math.PI * 2); ctx.fillStyle = '#1e6bff'; ctx.fill();
     },
   };
 })();
@@ -780,7 +811,22 @@ function step(dt) {
     }
     for (const o of game.vehicles) {
       // 道路から外れた車 (一方通行の終わりの交差点): そのままの向きでまっすぐ走り去る
-      if (o.free) { o.wx += o.fx * o.v * dt; o.wz += o.fz * o.v * dt; o.freeT = (o.freeT || 0) + dt; continue; }
+      if (o.free) {
+        // 道路から外れた車: まっすぐ走って、お濠に出たら飛びこむ (ドボン！)
+        o.freeT = (o.freeT || 0) + dt;
+        o.wx += o.fx * o.v * dt; o.wz += o.fz * o.v * dt;
+        const lv = world.waterLevelAt(o.wx, o.wz);
+        const gy = terrain.at(o.wx, o.wz) + 0.05;
+        if (o.diving || (lv !== null && o.wy > lv)) {
+          if (!o.diving) { o.diving = true; o.vy = 2.5; }
+          o.vy -= 9.8 * dt; o.wy += o.vy * dt;
+          o.pitch = Math.min(0.9, (o.pitch || 0) + dt * 0.9);
+          o.v *= Math.pow(0.4, dt);
+          if (!o.splashed && lv !== null && o.wy < lv + 0.5) { o.splashed = true; splash(o.wx, lv, o.wz, Math.hypot(o.wx - camera.position.x, o.wz - camera.position.z)); }
+          if (o.splashed) { o.vy = Math.max(o.vy, -1.2); o.v *= Math.pow(0.1, dt); }
+        } else o.wy = gy;
+        continue;
+      }
       // 前の車に近づいたら速さを合わせる
       let v = o.v0;
       for (const q of game.vehicles) {
@@ -801,7 +847,7 @@ function step(dt) {
       // 一方通行の区間に入る対向車と、一方通行の区間を出る車は、交差点で消さずに道路から外れてまっすぐ走り去る
       if ((o.dir < 0 && course.oneway(o.d)) || (o.ow && !course.oneway(o.d) && o.kind === 'car')) {
         const w = course.world(o.d, o.u, {});
-        o.free = true; o.wx = w.x; o.wz = w.z; o.wy = w.y;
+        o.free = true; o.freeT = 0; o.wx = w.x; o.wz = w.z; o.wy = w.y;
         o.yaw = w.yaw + (o.dir < 0 ? Math.PI : 0);
         o.fx = Math.sin(o.yaw); o.fz = Math.cos(o.yaw);
       }
@@ -810,7 +856,8 @@ function step(dt) {
     game.vehicles = game.vehicles.filter((o) => {
       const pf = course.frame(P.D);
       // 走り去る車は交差点を抜ける 3 秒だけ (お濠や公園に入っていかないように)
-      const keep = o.free ? o.freeT < 3 && world.waterLevelAt(o.wx + o.fx * 4, o.wz + o.fz * 4) === null && Math.hypot(o.wx - pf.x, o.wz - pf.z) < 400 : !o.gone && (o.dir < 0 ? o.d > P.D - 60 : o.d < P.D + 500 && o.d > P.D - 200);
+      // 走り去る車は、お濠に沈むか、12 秒たったら片付ける
+      const keep = o.free ? o.freeT < 12 && !(o.splashed && o.wy < (world.waterLevelAt(o.wx, o.wz) ?? 0) - 4) && Math.hypot(o.wx - pf.x, o.wz - pf.z) < 400 : !o.gone && (o.dir < 0 ? o.d > P.D - 60 : o.d < P.D + 500 && o.d > P.D - 200);
       if (!keep) scene.remove(o.mesh);
       return keep;
     });
@@ -986,12 +1033,14 @@ function render(dt, time) {
   crowd.draw(crowdList);
   oni.draw(course, time, P);
   fireworks.update(dt);
+  updateSplashes(dt);
   if (bolt.t > 0) { bolt.t -= dt; bolt.mat.opacity = Math.max(0, Math.min(1, bolt.t * 5)) * (0.6 + Math.random() * 0.4); if (bolt.t <= 0) bolt.mesh.visible = false; }
   // 車
   for (const o of game.vehicles) {
     if (o.free) {
-      o.mesh.position.set(o.wx, terrain.at(o.wx, o.wz) + 0.05, o.wz);
+      o.mesh.position.set(o.wx, o.wy, o.wz);
       o.mesh.rotation.set(0, o.yaw, 0);
+      o.mesh.rotateX(o.pitch || 0);
       o.mesh.visible = true;
       continue;
     }
