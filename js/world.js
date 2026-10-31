@@ -915,7 +915,7 @@ function addBalloon(scene, city) {
     if (d < bd2 && d < 120 * 120) { bd2 = d; top = bd; }
   }
   const rx = top ? top.cx : X, rz = top ? top.cz : Z, roof = top ? top.h + (top.base || 0) : 140;
-  const BR = 13, BY = roof + 62;
+  const BR = 24, BY = roof + 120; // 遠くからも見えるよう大きく
   const g = new THREE.Group();
   const ballTex = canvasTex(1024, 512, (c, w, h) => {
     c.fillStyle = '#ff6a00'; c.fillRect(0, 0, w, h);
@@ -936,8 +936,8 @@ function addBalloon(scene, city) {
     c.font = `900 ${Math.min(96, st * 0.9)}px ${JP}`; c.textAlign = 'center'; c.textBaseline = 'middle';
     txt.forEach((ch, i) => c.fillText(ch, w / 2, 20 + st * (i + 0.5)));
   });
-  const banner = new THREE.Mesh(new THREE.PlaneGeometry(6, 38), new THREE.MeshLambertMaterial({ map: bannerTex, side: THREE.DoubleSide }));
-  banner.position.y = BY - BR - 20;
+  const banner = new THREE.Mesh(new THREE.PlaneGeometry(12, 76), new THREE.MeshLambertMaterial({ map: bannerTex, side: THREE.DoubleSide }));
+  banner.position.y = BY - BR - 40;
   g.add(banner);
   const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, BY - BR - roof, 4), new THREE.MeshBasicMaterial({ color: 0x555555 }));
   rope.position.set(1.5, roof + (BY - BR - roof) / 2, 0);
@@ -945,7 +945,7 @@ function addBalloon(scene, city) {
   g.position.set(rx, 0, rz);
   scene.add(g);
   return {
-    pos: [rx, BY, rz],
+    pos: [rx, BY - 40, rz], // 見せ場では玉と垂れ幕のまん中を見る
     update(t) {
       g.rotation.y = t * 0.08;
       ball.position.x = Math.sin(t * 0.5) * 1.2;

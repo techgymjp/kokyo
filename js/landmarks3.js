@@ -182,11 +182,14 @@ export function addNijubashi(scene, G, waterLevelAt) {
   const g = new THREE.Group();
   const cx = (AX + BX) / 2, cz = (AZ + BZ) / 2;
   const L = Math.hypot(BX - AX, BZ - AZ);
-  const lv = (waterLevelAt && waterLevelAt(cx, cz)) ?? (G(cx, cz) - 5);
-  const deckY = Math.max(G(AX, AZ), G(BX, BZ));
+  const lv = G(cx, cz);
+  // 国土地理院の水面データにこの部分のお濠がないので、橋の下に水面と石垣を足し、橋はその上 (地面 + 7m) に架ける
+  const ground = Math.max(G(AX, AZ), G(BX, BZ));
+  const deckY = ground + 4.5;
   g.position.set(cx, 0, cz);
   g.rotation.y = Math.atan2(BX - AX, BZ - AZ);
-  const granite = M(0xe4e0d6), shade = M(0xc9c4b8), iron = M(0x2a2a2a), lamp = M(0xfff3cf, { emissive: 0x6a5a30 });
+  // 暗い灰色の花崗岩 (写真の色)
+  const granite = M(0x6e6c68), shade = M(0x5c5a56), iron = M(0x2a3a34), lamp = M(0xfff3cf, { emissive: 0x6a5a30 });
   const H = deckY - lv;
   // 橋の側面 (アーチの穴をあけた壁を、アーチごとに組み立てる)
   const W = 12;
@@ -214,9 +217,15 @@ export function addNijubashi(scene, G, waterLevelAt) {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 4.5, 8), iron);
       post.position.set(side * (W / 2 - 0.3), deckY + 3.4, z);
       g.add(post);
-      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), lamp);
-      globe.position.set(side * (W / 2 - 0.3), deckY + 5.9, z);
-      g.add(globe);
+      // 飾り灯: 柱の上に5つの灯 (まん中と四方)
+      for (const [ox, oy, oz] of [[0, 6.3, 0], [0.7, 5.6, 0], [-0.7, 5.6, 0], [0, 5.6, 0.7], [0, 5.6, -0.7]]) {
+        const globe = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), lamp);
+        globe.position.set(side * (W / 2 - 0.3) + ox, deckY + oy, z + oz);
+        g.add(globe);
+      }
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.2, 2.2), granite);
+      pier.position.set(side * (W / 2 - 0.3), deckY + 1.6, z);
+      g.add(pier);
     }
   }
   // 橋の上 (路面) とアーチの裏
@@ -229,6 +238,16 @@ export function addNijubashi(scene, G, waterLevelAt) {
     vault.position.set(0, deckY - H + archR * 0.35, ax);
     vault.material.side = THREE.DoubleSide;
     g.add(vault);
+  }
+  // お濠の水面 (橋の両側へ広く) と、岸の石垣
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(120, L * 0.8), M(0x2f5a63, { emissive: 0x0a1418 }));
+  water.rotation.x = -Math.PI / 2;
+  water.position.set(0, ground + 0.12, 0);
+  g.add(water);
+  for (const sz of [-1, 1]) {
+    const bank = new THREE.Mesh(new THREE.BoxGeometry(120, 1.2, 2), granite);
+    bank.position.set(0, ground + 0.6, sz * (L * 0.4 + 1));
+    g.add(bank);
   }
   scene.add(g);
   // 正門鉄橋 (奥の鉄の橋)

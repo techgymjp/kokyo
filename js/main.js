@@ -87,8 +87,9 @@ const closestS = (p, a, b) => { let best = a, bd = 1e18; for (let d = a; d <= b;
 const sideAt = (name, p, a, b, half = 55, opt = {}) => { const c = closestS(p, a, b); return { name, mode: 'side', s0: c - half, s1: c + half, c, p, dist: 9, look: 0.08, up: 2.4, ...opt }; };
 // 千鳥ヶ淵の見せ場: お濠の上 (道路の左 70m)
 const chidoriView = (() => { const d = lab('千鳥ヶ淵') - 40; const p = course.world(d, course.walkEdge(d) - 70); return [p.x, p.y - 2, p.z]; })();
+const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.5, up: 16, fov: 70, labelUp: 75 });
 const SHOW = [
-  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 14, look: 0.2, fov: 30, labelUp: 26, clear: 15 }),
+  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 14, look: 0.2, fov: 30, labelUp: 26, clear: 21 }),
   sideAt('大手門', [world.castle.otemon.pos[0], world.castle.otemon.y + 8, world.castle.otemon.pos[1]], lab('和田倉門'), lab('竹橋'), 45, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55, labelUp: 16 }),
   sideAt('和気清麻呂像', [world.wake.pos[0], world.wake.y + 10, world.wake.pos[1]], lab('大手門'), lab('竹橋'), 35, { clear: 12, look: 0.25, dist: 9, up: 2.5, fov: 55, labelUp: 6 }),
   sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),
@@ -98,7 +99,7 @@ const SHOW = [
   sideAt('千鳥ヶ淵', chidoriView, lab('九段坂上'), lab('千鳥ヶ淵交差点'), 60, { dist: 10, up: 3.5, look: 0.35, fov: 62, labelUp: 14 }),
   // 半蔵門: 近づくところで斜め後ろから (土手の上の門と石垣)
   (() => { const p = [world.castle.hanzo.pos[0], world.castle.hanzo.y + 4, world.castle.hanzo.pos[1]]; const c = closestS(p, lab('千鳥ヶ淵交差点'), lab('国立劇場')); return { name: '半蔵門', mode: 'diag', s0: c - 90, s1: c + 5, p, up: 6, look: 0.45, clear: 18, labelUp: 10 }; })(),
-  sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.35, up: 18, fov: 62, labelUp: 30 }),
+
   // 国会議事堂: 正面アングル (議事堂が進行方向のまっすぐ前に来る所で、後ろから議事堂へ目を向けて少し望遠)
   (() => {
     const p = at(...ll(35.67590, 139.74480), 40);
@@ -108,8 +109,10 @@ const SHOW = [
       const c = (dx * f.tx + dz * f.tz) / l;
       if (c > bd) { bd = c; best = d; }
     }
-    return { name: '国会議事堂', mode: 'behind', s0: best - 110, s1: best + 30, p, look: 0.85, fov: 38, up: 1.5, clear: 30, labelUp: 34 };
+    // アドバルーンの横アングルの手前まで
+    return { name: '国会議事堂', mode: 'behind', s0: lab('半蔵門') + 30, s1: Math.min(best + 30, balloonSide.c - 50), p, look: 0.85, fov: 38, up: 1.5, clear: 30, labelUp: 34 };
   })(),
+  balloonSide,
   { name: '桜田門', mode: 'behind', s0: lab('桜田門') - 120, s1: lab('桜田門') + 30, p: at(...world.gates.sakurada, 14) },
   sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.35, up: 4, dist: 30, fov: 13, labelUp: 14 }),
 ].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
@@ -964,14 +967,11 @@ function render(dt, time) {
       // プレイヤーと名所のあいだを見る (寄せすぎると自分が見えなくなるので、ふつうは半分まで)
       camLook.lerp(toL.lerp(pl, 0.35), (sc.o.look ?? 0.5) * showW);
     }
-    showLabel.position.copy(sc.o.v).add(new THREE.Vector3(0, sc.o.labelUp || 14, 0));
-    if (showLabel.userData.name !== sc.o.name) setShowLabel(sc.o.name);
+      if ($('showName').textContent !== sc.o.name) $('showName').textContent = sc.o.name;
   }
-  // 札の大きさは画角に合わせる (望遠のときに大きくなりすぎないように)
-  const ls = 0.8 * camera.fov / 68;
-  showLabel.scale.set(ls, ls * 0.1875, 1);
-  showLabel.material.opacity = Math.min(1, showW * 1.5);
-  showLabel.visible = showW > 0.02;
+  // 名所の名前は画面の上部に (被写体を隠さないように)
+  $('showName').style.opacity = Math.min(1, showW * 1.5).toFixed(2);
+  showLabel.visible = false;
   if (!camInit) { camera.position.copy(camPos); camInit = true; }
   camera.position.lerp(camPos, Math.min(1, dt * (showW > 0.05 ? 3 : 6)));
   if (game.shake > 0) { game.shake -= dt; camera.position.y += (Math.random() - 0.5) * 0.25 * game.shake / 0.3; camera.position.x += (Math.random() - 0.5) * 0.1 * game.shake / 0.3; }
