@@ -14,6 +14,8 @@ nl = [max(1, min(4, v)) for v in fill(nl)]; nr = [max(1, min(4, v)) for v in fil
 pts = []
 for i, r in enumerate(L):
   p = [r[0], r[1], nl[i], nr[i]]
+  # 千鳥ヶ淵の道は全体で1車線 (幅約3.8m): ランナーと、向こうから来る車・バイクが同じ1車線を使う
+  if r[4] == '千鳥ヶ淵の道': p[2] = p[3] = 0.6
   if pts and math.dist(pts[-1][:2], p[:2]) < 1.5: continue
   pts.append(p)
 labels = []

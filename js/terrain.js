@@ -1,6 +1,6 @@
 // 地面の高さ (国土地理院の標高タイルから作った 20m 格子)。コースの道路の所は道路の高さにならす
 import { TERRAIN } from './terrain-data.js';
-import { LANE_W, WALK_W } from './course.js';
+import { LANE_W } from './course.js';
 
 export class Terrain {
   constructor(course) {
@@ -19,7 +19,7 @@ export class Terrain {
       const x = x0 + i * step, z = z0 + j * step;
       const n = course.nearest(x, z, 90);
       if (!n) continue;
-      const left = course.NL[n.i] * LANE_W + WALK_W, right = course.NR[n.i] * LANE_W + 3.5;
+      const left = course.NL[n.i] * LANE_W + course.WW[n.i], right = course.NR[n.i] * LANE_W + 3.5;
       const out = n.u < 0 ? Math.max(0, -n.u - left) : Math.max(0, n.u - right);
       const k = out < 22 ? 1 : out < 40 ? 1 - (out - 22) / 18 : 0;
       if (k <= 0) continue;

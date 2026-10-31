@@ -1,6 +1,7 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W, WALK_W } from './course.js';
+import { Course, LANE_W } from './course.js';
+import { ll } from './city.js';
 import { Terrain } from './terrain.js';
 import { createWorld, TOD_NAMES } from './world.js';
 import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js';
@@ -71,7 +72,46 @@ const EVENT_S = SAKURADA - 18; // 行列が横断する所 (警視庁の前 → 
 const KUDAN = [course.labels.find((l) => l.name === '九段下').s, course.labels.find((l) => l.name === '九段坂上').s];
 const MIYAKE = [course.labels.find((l) => l.name === '国立劇場').s, SAKURADA - 150];
 // 千鳥ヶ淵の歩道は石畳 (ずっとガタガタして、少しだけ遅くなる)
-const COBBLE = [course.labels.find((l) => l.name === '九段坂上').s + 30, course.labels.find((l) => l.name === '千鳥ヶ淵').s + 60];
+const COBBLE = [course.labels.find((l) => l.name === '九段坂上').s + 15, course.labels.find((l) => l.name === '千鳥ヶ淵交差点').s - 10];
+// ---------- 見せ場: 名所が見えるカメラ (プレイヤーの後ろからは保ったまま、少し高く引いて名所の方へ目を向ける) ----------
+const lab = (n) => course.labels.find((l) => l.name === n).s;
+const at = (x, z, h) => [x, terrain.at(x, z) + h, z];
+// mode: 'behind' (後ろから、少し高く引いて名所へ目を寄せる) / 'side' (通過するときだけ横から、プレイヤー越しに名所を見る)
+// 名所にいちばん近づく所 (side の中心)
+const closestS = (p, a, b) => { let best = a, bd = 1e18; for (let d = a; d <= b; d += 2) { const f = course.frame(d); const q = (f.x - p[0]) ** 2 + (f.z - p[2]) ** 2; if (q < bd) { bd = q; best = d; } } return best; };
+const sideAt = (name, p, a, b, half = 55, opt = {}) => { const c = closestS(p, a, b); return { name, mode: 'side', s0: c - half, s1: c + half, c, p, dist: 9, look: 0.08, up: 2.4, ...opt }; };
+const SHOW = [
+  { name: '日本武道館', mode: 'behind', s0: lab('竹橋') + 10, s1: lab('九段下') - 20, p: at(...world.budokan.pos, 34) },
+  sideAt('日本武道館', at(...world.budokan.pos, 30), lab('九段下'), lab('九段坂上'), 60, { dist: 16, up: 4, fov: 50 }), // 田安門の前で横から
+  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 22), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 6, look: 0.1, fov: 36, labelUp: 26, clear: 26 }),
+  sideAt('パレスホテル東京', at(world.famous.palaceHotel.x, world.famous.palaceHotel.z, 60), lab('二重橋前'), lab('大手門'), 40, { clear: 20, dist: 14, up: 1.2, look: 0.3, fov: 80, labelUp: 50 }),
+  sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),
+  sideAt('半蔵門', at(...world.gates.hanzo, 6), lab('千鳥ヶ淵交差点'), lab('国立劇場'), 45),
+  sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 13, look: 0.22, up: 0.8, labelUp: 34 }),
+  sideAt('国会議事堂', at(...ll(35.67590, 139.74480), 40), lab('国立劇場'), lab('桜田門'), 70, { clear: 40, look: 0.1, up: 10, dist: 30, fov: 36 }),
+  { name: '桜田門', mode: 'behind', s0: lab('桜田門') - 120, s1: lab('桜田門') + 30, p: at(...world.gates.sakurada, 14) },
+  sideAt('二重橋', at(...ll(35.68060, 139.75420), 8), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.1, up: 7, dist: 28, fov: 32, labelUp: 10 }),
+].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
+// 見せ場の視線 (カメラ → プレイヤー → 名所) をさえぎる木を取り除く
+world.clearTrees(SHOW.map((o) => {
+  const c = o.mode === 'side' ? o.c : (o.s0 + o.s1) / 2;
+  const f = course.frame(c);
+  const ax = o.v.x - f.x, az = o.v.z - f.z, l = Math.hypot(ax, az) || 1;
+  const back = o.mode === 'side' ? (o.dist || 9) + 8 : 12;
+  return [f.x - ax / l * back, f.z - az / l * back, o.v.x - ax / l * 25, o.v.z - az / l * 25, o.clear || (o.mode === 'side' ? 14 : 10)];
+}));
+function showcase(d) {
+  let best = null, w = 0;
+  for (const o of SHOW) {
+    const R = o.mode === 'side' ? 25 : 60; // 切り替えにかける距離
+    const k = Math.min(1, (d - o.s0) / R, (o.s1 - d) / R);
+    if (k > w) { w = k; best = o; }
+  }
+  return { o: best, w: Math.max(0, w) };
+}
+
+// 千鳥ヶ淵の道: 一方通行を逆に走る狭い道 (車もバイクも向こうから来る)。歩道は石畳で歩行者が多い。どちらを通るか選ぶ難しい区間
+const inChidori = (d) => { const x = ((d % course.L) + course.L) % course.L; return x > COBBLE[0] - 20 && x < COBBLE[1] + 10; };
 const onCobble = (d, u) => d > COBBLE[0] && d < COBBLE[1] && u < course.leftEdge(d);
 
 // 影 (足元の丸)
@@ -145,7 +185,7 @@ function spawnRunners(d) {
   for (let k = 0; k < n; k++) grp.members.push(addPerson(d + rr(-0.15, 0.15), u0 + k * 0.62, v, 0, { grp, off: k * 0.62 - w / 2 }));
 }
 function spawnWalker(d) {
-  const L = course.leftEdge(d), Wk = L - WALK_W;
+  const L = course.leftEdge(d), Wk = course.walkEdge(d);
   const stand = rnd() < 0.1;
   addPerson(d, rr(Wk + 0.6, L - 0.5), stand ? 0 : rr(0.9, 1.6), 1, { stand });
 }
@@ -154,13 +194,14 @@ function fillPeople(to) {
   const D = DIFF[tod];
   while (game.frontier < to) {
     const nl = Math.max(1, (course.runnerRight(game.frontier) - course.leftEdge(game.frontier)) / LANE_W);
-    const rr0 = D.runners * nl / 2, rate = (rr0 + D.walkers) / 100; // 1m あたり
+    const ch = inChidori(game.frontier);
+    const rr0 = D.runners * nl / 2 * (ch ? 1.3 : 1), wk = D.walkers * (ch ? 1.8 : 1), rate = (rr0 + wk) / 100; // 1m あたり
     game.frontier += expGap(1 / rate);
     const d = game.frontier;
     // スタート直後のすぐ前は空けておく
     if (game.state !== 'play' && d > P.D - 5 && d < P.D + 25) continue;
     if (d > P.D - 4 && d < P.D + 8) continue;
-    if (rnd() < D.walkers / (rr0 + D.walkers)) spawnWalker(d); else spawnRunners(d);
+    if (rnd() < wk / (rr0 + wk)) spawnWalker(d); else spawnRunners(d);
   }
 }
 
@@ -210,7 +251,7 @@ function spawnMoto(dir, d) {
   if (dir < 0 && ow) return;
   let u;
   if (ow) u = course.leftEdge(d) + LANE_W * (1 + Math.floor(rnd() * 3));
-  else if (dir < 0) u = course.nr(d) > 1.6 && rnd() < 0.4 ? LANE_W : rr(-0.15, 0.25);
+  else if (dir < 0) u = course.nr(d) < 0.9 ? rr(0.2, 0.5) : course.nr(d) > 1.6 && rnd() < 0.4 ? LANE_W : rr(-0.15, 0.25);
   else u = course.nl(d) > 1.6 && rnd() < 0.4 ? -LANE_W : rr(-0.25, 0.15);
   const o = makeVehicle('moto', dir, d, u, dir < 0 ? rr(13, 17) : rr(19, 24), -1);
   o.ow = ow;
@@ -560,7 +601,7 @@ function step(dt) {
   if (playing) {
     game.t += dt;
     const steer = steerInput();
-    const L = course.leftEdge(P.D), Wk = L - WALK_W, R = course.rightEdge(P.D);
+    const L = course.leftEdge(P.D), Wk = course.walkEdge(P.D), R = course.rightEdge(P.D);
     // 横の動き (速いほどよく曲がる)
     const latMax = Math.min(5.5, 1.8 + P.v * 0.22);
     P.lat += (steer * latMax - P.lat) * Math.min(1, dt * 9);
@@ -595,6 +636,8 @@ function step(dt) {
     const grade = course.grade(P.D);
     a -= 9.8 * grade * G_AMP;
     a -= DRAG * P.v * P.v + 0.05;
+    // ダッシュしていないときは、時速40km を超えた分だけ減速して40km に戻る (下り坂 (勾配 -1% より急) では坂の勢いにまかせる)
+    if (!dashing && P.v > cruise) a -= (P.v - cruise) * 0.3 * Math.min(1, Math.max(0, (grade + 0.012) / 0.012));
     if (brakeInput()) a -= 8;
     // 石畳: ガタガタ (揺れ・音・振動) と少しの減速
     if (onCobble(P.D, P.U) && P.v > 1) {
@@ -614,7 +657,11 @@ function step(dt) {
     if (P.D >= course.L) { finish(true); }
     // 地名
     const lb = course.labelAt(P.D);
-    if (lb && lb !== game.lastLabel) { game.lastLabel = lb; if (P.D > 5) flash(lb.name, 1.6, 'place'); }
+    if (lb && lb !== game.lastLabel) {
+      game.lastLabel = lb;
+      if (lb.name === '九段坂上') flash('千鳥ヶ淵へ：狭い道は対向車、歩道は石畳。どっちを行く？', 3, 'warn');
+      else if (P.D > 5) flash(lb.name, 1.6, 'place');
+    }
     if (!game.eventDone && P.D > EVENT_S - 260) { game.eventDone = true; startEvent(); }
   } else if (game.state === 'crash') {
     game.crashT += dt;
@@ -649,7 +696,7 @@ function step(dt) {
           p.tu = p.kind === 0 ? p.u + rr(-1.2, 1.2) : p.u + rr(-0.8, 0.8);
         }
         // 車線が減る所では、はみ出さないように寄る
-        if (p.kind === 0) p.tu = Math.min(R - 0.5, Math.max(p.tu, L + 0.5)); else p.tu = Math.max(Math.min(p.tu, L - 0.5), L - WALK_W + 0.6);
+        if (p.kind === 0) p.tu = Math.min(R - 0.5, Math.max(p.tu, L + 0.5)); else p.tu = Math.max(Math.min(p.tu, L - 0.5), course.walkEdge(p.d) + 0.6);
       }
       p.u += Math.max(-0.5, Math.min(0.5, p.tu - p.u)) * dt;
     }
@@ -658,7 +705,7 @@ function step(dt) {
     for (let k = 0; k < 4; k++) {
       game.laneTimers[k] -= dt;
       if (game.laneTimers[k] <= 0) {
-        game.laneTimers[k] = D.carGap * (0.4 + rnd() * 1.2) / (12 + Math.max(P.v, 4));
+        game.laneTimers[k] = D.carGap * (inChidori(P.D + 430) ? 0.55 : 1) * (0.4 + rnd() * 1.2) / (12 + Math.max(P.v, 4));
         spawnCar(k, P.D + 430);
       }
     }
@@ -668,7 +715,7 @@ function step(dt) {
       if (P.v < 15) spawnCarBehind(1 + Math.floor(rnd() * 3), P.D - 120);
     }
     game.motoTimer -= dt;
-    if (game.motoTimer <= 0) { game.motoTimer = D.motoGap * (0.4 + rnd() * 1.2) / (15 + Math.max(P.v, 4)); spawnMoto(-1, P.D + 430); }
+    if (game.motoTimer <= 0) { game.motoTimer = D.motoGap * (inChidori(P.D + 430) ? 0.4 : 1) * (0.4 + rnd() * 1.2) / (15 + Math.max(P.v, 4)); spawnMoto(-1, P.D + 430); }
     if (playing) {
       game.motoBehindTimer -= dt;
       if (game.motoBehindTimer <= 0) { game.motoBehindTimer = D.motoBehind * (0.5 + rnd()); if (P.v < 18) spawnMoto(1, P.D - 110); }
@@ -780,6 +827,33 @@ function step(dt) {
 // ---------- 描画の更新 ----------
 const crowdList = [];
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+let showW = 0;
+// 見せ場の名所の上に浮かぶ名前
+const showLabel = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false, fog: false, sizeAttenuation: false }));
+showLabel.renderOrder = 10;
+scene.add(showLabel);
+function setShowLabel(name) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 96;
+  const g = c.getContext('2d');
+  // 札に収まる大きさの文字で
+  let fs = 52;
+  const font = () => `bold ${fs}px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
+  g.font = font();
+  while (g.measureText(name).width > 450 && fs > 20) { fs -= 2; g.font = font(); }
+  const w = Math.min(500, g.measureText(name).width + 40);
+  g.fillStyle = 'rgba(0,0,0,0.55)';
+  g.beginPath(); g.roundRect((512 - w) / 2, 8, w, 80, 40); g.fill();
+  g.fillStyle = '#ffd36b'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(name, 256, 50);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  if (showLabel.material.map) showLabel.material.map.dispose();
+  showLabel.material.map = t;
+  showLabel.material.needsUpdate = true;
+  showLabel.scale.set(0.42, 0.079, 1);
+  showLabel.userData.name = name;
+}
 let camInit = false;
 function render(dt, time) {
   // 自転車
@@ -830,11 +904,39 @@ function render(dt, time) {
   const sp = Math.min(1, P.v / 22);
   camPos.set(back.x, back.y + 2.6 - sp * 0.5, back.z);
   camLook.set(ahead.x, ahead.y + 1.0, ahead.z);
+  // 見せ場: 後ろからのまま、少し高く・後ろへ引いて、名所の方へ目を寄せる (プレイヤーが画面から出ない範囲で)
+  const sc = showcase(P.D);
+  showW += ((game.state === 'play' || game.state === 'countdown' ? sc.w : 0) - showW) * Math.min(1, dt * 1.5);
+  if (sc.o && showW > 0.01) {
+    const pl = new THREE.Vector3(f.x, f.y + 1, f.z);
+    if (sc.o.mode === 'side') {
+      // 横から: 名所と反対側の斜め後ろにカメラを置き、プレイヤー越しに名所を見る
+      const away = pl.clone().sub(sc.o.v).setY(0).normalize();
+      const fwd = new THREE.Vector3(f.tx, 0, f.tz);
+      const sidePos = pl.clone().addScaledVector(away, sc.o.dist).addScaledVector(fwd, -3).add(new THREE.Vector3(0, sc.o.up, 0));
+      const sideLook = pl.clone().lerp(sc.o.v, sc.o.look).add(new THREE.Vector3(0, 1.5, 0));
+      camPos.lerp(sidePos, showW);
+      camLook.lerp(sideLook, showW);
+    } else {
+      const bk = course.world(P.D - 6.5 - 3.5 * showW, P.U * 0.8, F2);
+      camPos.set(bk.x, bk.y + 2.6 - sp * 0.5 + 5 * showW, bk.z);
+      const toL = sc.o.v.clone().sub(camPos).normalize().multiplyScalar(40).add(camPos);
+      // プレイヤーと名所のあいだを見る (寄せすぎると自分が見えなくなるので半分まで)
+      camLook.lerp(toL.lerp(pl, 0.35), 0.5 * showW);
+    }
+    showLabel.position.copy(sc.o.v).add(new THREE.Vector3(0, sc.o.labelUp || 14, 0));
+    if (showLabel.userData.name !== sc.o.name) setShowLabel(sc.o.name);
+  }
+  showLabel.material.opacity = Math.min(1, showW * 1.5);
+  showLabel.visible = showW > 0.02;
   if (!camInit) { camera.position.copy(camPos); camInit = true; }
-  camera.position.lerp(camPos, Math.min(1, dt * 6));
+  camera.position.lerp(camPos, Math.min(1, dt * (showW > 0.05 ? 3 : 6)));
   if (game.shake > 0) { game.shake -= dt; camera.position.y += (Math.random() - 0.5) * 0.25 * game.shake / 0.3; camera.position.x += (Math.random() - 0.5) * 0.1 * game.shake / 0.3; }
   camera.lookAt(camLook);
-  const fov = 68 + sp * 18;
+  let fov = 68 + sp * 18;
+  // 横アングルで遠くの名所を写すときは望遠に (画角を狭く)
+  const scf = showcase(P.D);
+  if (scf.o && scf.o.mode === 'side' && scf.o.fov) fov += (scf.o.fov - fov) * showW;
   if (Math.abs(camera.fov - fov) > 0.1) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
   // 雪 (桜田門のあたり)
   const sn = THREE.MathUtils.clamp(1 - (Math.abs(P.D - EVENT_S) - 150) / 250, 0, 1);
@@ -920,4 +1022,4 @@ toTitle();
 $('loading').classList.add('hidden');
 loop();
 
-if (DEBUG) window.dbg = { oni, strike, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
+if (DEBUG) window.dbg = { SHOW, oni, strike, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };

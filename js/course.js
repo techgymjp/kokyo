@@ -1,7 +1,7 @@
 // コース: 二重橋前から反時計回りに皇居を一周する道路 (OpenStreetMap の内堀通り・靖国通り)
 // 位置は s (スタートからの距離 m) と u (道路の中心線からの横の位置 m、進行方向の右がプラス) で表す。
 //   u < 歩道の端          … お濠側の柵 (通れない)
-//   歩道 (左)              … 歩行者 (WALK_W m)
+//   歩道 (左)              … 歩行者 (ふつう WALK_W m、千鳥ヶ淵緑道は WALK_W_WIDE m)
 //   こちら向きの車線 (u < 0) … ランナーに開放された車線 (車線数は場所ごとに実際の数)
 //   中心線 (u = 0)          … 対向のバイクが走る
 //   対向車線 (u > 0)        … 向こうから車が来る
@@ -11,6 +11,7 @@ import { PTS, LABELS, ELEV } from './course-data.js';
 
 export const LANE_W = 3.2;   // 1車線の幅
 export const WALK_W = 3.6;   // 歩道の幅
+export const WALK_W_WIDE = 6.5; // 千鳥ヶ淵の歩道 (千鳥ヶ淵緑道) は広い
 export const CURB_H = 0.15;  // 歩道の段差
 // 一方通行 (都道301号) の区間: [始まりの地名, 終わりの地名] (null はスタート / ゴール)
 const ONEWAY = [['祝田橋', null], [null, '竹橋']];
@@ -90,6 +91,13 @@ export class Course {
       for (let k = -20; k <= 20; k++) { al += rawNL[(i + k + N) % N]; ar += rawNR[(i + k + N) % N]; }
       this.NL[i] = al / 41; this.NR[i] = ar / 41;
     }
+    // 歩道の幅 (1車線の千鳥ヶ淵の道の所は広い。前後 20m でなめらかに)
+    this.WW = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      let a = 0;
+      for (let k = -20; k <= 20; k++) a += rawNL[(i + k + N) % N] < 0.9 ? WALK_W_WIDE : WALK_W;
+      this.WW[i] = a / 41;
+    }
     // 近くの点を探す格子
     this.G = 24;
     this.grid = new Map();
@@ -131,11 +139,13 @@ export class Course {
   nl(s) { const i = Math.floor(this.idx(s)) % this.N; return this.NL[i]; }
   nr(s) { const i = Math.floor(this.idx(s)) % this.N; return this.NR[i]; }
   leftEdge(s) { return -this.nl(s) * LANE_W; }       // ランナー車線の左端 (歩道との段差)
-  walkEdge(s) { return this.leftEdge(s) - WALK_W; }  // 歩道の左端 (お濠側の柵)
+  walkW(s) { return this.WW[Math.floor(this.idx(s)) % this.N]; }
+  walkEdge(s) { return this.leftEdge(s) - this.walkW(s); }  // 歩道の左端 (お濠側の柵)
   rightEdge(s) { return this.nr(s) * LANE_W; }       // 対向車線の右端 (一方通行では 0)
   oneway(s) { return this.OW[Math.floor(this.idx(s)) % this.N] === 1; }
   // ランナーが走る範囲の右端 (一方通行ではいちばん左の車線だけ)
-  runnerRight(s) { return this.oneway(s) ? this.leftEdge(s) + LANE_W : 0; }
+  // 千鳥ヶ淵の道 (1車線) では左端だけ (右寄りを向こうから車が来る)
+  runnerRight(s) { return this.oneway(s) ? this.leftEdge(s) + LANE_W : Math.min(0, this.rightEdge(s) - 2.4); }
   lift(u, nl) { return u < -nl * LANE_W ? CURB_H : 0; } // 歩道は少し高い
 
   // (x, z) にいちばん近いコースの点。u: 横の位置 (右がプラス)、d: 中心線からの距離
@@ -154,7 +164,7 @@ export class Course {
   onRoad(x, z, pad = 0) {
     const n = this.nearest(x, z, 40 + pad);
     if (!n) return false;
-    return n.u > -(this.NL[n.i] * LANE_W + WALK_W) - pad && n.u < Math.max(this.NR[n.i] * LANE_W, 0) + 3.5 + pad;
+    return n.u > -(this.NL[n.i] * LANE_W + this.WW[n.i]) - pad && n.u < Math.max(this.NR[n.i] * LANE_W, 0) + 3.5 + pad;
   }
   labelAt(s) {
     let cur = null;

@@ -2,9 +2,10 @@
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
 import { City, ll } from './city.js';
+import { CITY } from './city-data.js';
 import { ROADS } from './road-data.js';
 import { WATER, WATER_LEVEL } from './water-data.js';
-import { LANE_W, WALK_W, CURB_H } from './course.js';
+import { LANE_W, CURB_H } from './course.js';
 import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js';
 import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js';
 import { hideFamousSites, addFamous } from './landmarks3.js';
@@ -95,6 +96,11 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   hideFamousSites(city);
   city.buildMeshes(scene, mats);
   city.skipPier = (x, z) => course.onRoad(x, z, 3);
+  // 首都高 都心環状線は北の丸公園の下をトンネルで通る (代官町〜竹橋)。北の丸の上に高架は描かない
+  {
+    const [ax, az] = ll(35.6962, 139.7468), [bx, bz] = ll(35.6888, 139.7549);
+    for (const r of CITY.roads) for (let i = 0; i < r.x.length; i++) if (r.x[i] > ax && r.x[i] < bx && r.z[i] > az && r.z[i] < bz) r.t[i] = 1;
+  }
   city.buildRoads(scene);
 
   // 名所 (ターザン大東京の手作りモデル)。原点に置いた部品は地面の高さへ持ち上げる
@@ -115,16 +121,16 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const budokan = place(addBudokan);
   const palace = place(addImperialPalace);
   const gates = place(addPalaceGates);
-  place(addTokyoStation);
+  const tstation = place(addTokyoStation);
   const yk = place(addYotsuyaKudan);
   place(addAkasaka);
   place(addNewOtani);
   const skytreeMat = addSkytree(scene);
   const fuji = addFuji(scene);
   const distant = addDistant(scene);
-  place(() => addCastleGates(scene, course, G));
+  const castle = addCastleGates(scene, course, G);
   place(() => addKusunoki(scene, G));
-  addFamous(scene, G);
+  const famous = addFamous(scene, G);
 
   // ---------- 地面 (標高つき) ----------
   const GB = { x0: terrain.x0, z0: terrain.z0, x1: terrain.x0 + (terrain.nx - 1) * terrain.step, z1: terrain.z0 + (terrain.nz - 1) * terrain.step };
@@ -441,6 +447,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const roadMeshes = buildCourseRoad(scene, course);
 
   // ---------- 木 ----------
+  let clearTrees = () => {};
   const insideBuilding = (x, z) => { const l = city.cell(x, z); if (l) for (const bd of l) if (bd.plateau && city.inside(bd, x, z)) return true; return false; };
   {
     const img = groundCanvas.getContext('2d').getImageData(0, 0, GW, GH).data;
@@ -470,10 +477,12 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     // 都道301号 (一方通行の区間) には街路樹がない
     for (let d = 0; d < course.L; d += 9 + rnd() * 5) {
       if (course.oneway(d)) continue;
+      // 竹橋〜清水門のお濠側は木を植えない (武道館が見えるように)
+      const openView = d > course.labels.find((l) => l.name === '竹橋').s && d < course.labels.find((l) => l.name === '九段下').s;
       const ul = course.walkEdge(d) - 2.4 - rnd() * 2;
       const pl = course.world(d, ul);
       const sakura = d > chidori.s && d < hanzo.s + 150;
-      if (waterInfo.levelAt(pl.x, pl.z) === null && !insideBuilding(pl.x, pl.z)) pts.push([pl.x, pl.z, rnd(), sakura ? 2 : 1, pl.y]);
+      if (!openView && waterInfo.levelAt(pl.x, pl.z) === null && !insideBuilding(pl.x, pl.z)) pts.push([pl.x, pl.z, rnd(), sakura ? 2 : 1, pl.y]);
       const ur = course.rightEdge(d) + 3.5 + 1.2;
       const pr = course.world(d, ur);
       if (rnd() < 0.8 && waterInfo.levelAt(pr.x, pr.z) === null && !insideBuilding(pr.x, pr.z)) pts.push([pr.x, pr.z, rnd(), 3, pr.y]);
@@ -501,6 +510,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     const pm = new THREE.InstancedMesh(pineGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), pts.length);
     let np = 0;
     const hide = new THREE.Matrix4().makeScale(0, 0, 0);
+    const pineIdx = new Int32Array(pts.length).fill(-1);
     const tm = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: 0x5a4636 }), pts.length);
     const m4 = new THREE.Matrix4(), col = new THREE.Color();
     pts.forEach(([x, z, r, kind, yy], i) => {
@@ -511,6 +521,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
         const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, r * 6.28, 0));
         m4.compose(new THREE.Vector3(x, y + sc * 0.62 + 1.2, z), q, new THREE.Vector3(sc * 0.6, sc * 0.75, sc * 0.6));
         pm.setMatrixAt(np, m4);
+        pineIdx[i] = np;
         pm.setColorAt(np, col.setHSL(0.3 + r * 0.04, 0.32, 0.15 + r * 0.06));
         np++;
         im.setMatrixAt(i, hide);
@@ -537,6 +548,23 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     });
     pm.count = np;
     scene.add(im, tm, pm);
+    // 見せ場の視線をさえぎる木を取り除く (segs: [[ax, az, bx, bz, 半径], ...])
+    clearTrees = (segs) => {
+      const zero = new THREE.Matrix4().makeScale(0, 0, 0);
+      pts.forEach(([x, z, r, kind], i) => {
+        for (const [ax, az, bx, bz, rad] of segs) {
+          const ex = bx - ax, ez = bz - az, L2 = ex * ex + ez * ez || 1;
+          const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / L2));
+          if (Math.hypot(x - ax - ex * t, z - az - ez * t) < rad) {
+            tm.setMatrixAt(i, zero);
+            im.setMatrixAt(i, zero);
+            if (pineIdx[i] >= 0) pm.setMatrixAt(pineIdx[i], zero);
+            break;
+          }
+        }
+      });
+      tm.instanceMatrix.needsUpdate = im.instanceMatrix.needsUpdate = pm.instanceMatrix.needsUpdate = true;
+    };
   }
 
   // ---------- 街灯 (歩道のお濠側) ----------
@@ -609,7 +637,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   // スタート地点のまわりのタイルを先に組み立てる
   function prebuild(x, z) { while (city.streamTiles(x, z, 900, 4) > 0); }
 
-  return { city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, waterLevelAt: waterInfo.levelAt };
+  return { famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
 }
 
 // コースの道路のメッシュ
@@ -630,11 +658,11 @@ function buildCourseRoad(scene, course) {
     quad(pos, col, pt(s0, ua, y0), pt(s0, ua, y1), pt(s1, ub, y1), pt(s1, ub, y0), color);
   };
   const ST = 2;
-  const cobble = [course.labels.find((l) => l.name === '九段坂上').s + 30, course.labels.find((l) => l.name === '千鳥ヶ淵').s + 60];
+  const cobble = [course.labels.find((l) => l.name === '九段坂上').s + 15, course.labels.find((l) => l.name === '千鳥ヶ淵交差点').s - 10];
   for (let s = 0; s < course.L; s += ST) {
     const s1 = Math.min(course.L, s + ST);
     const la = course.leftEdge(s), lb = course.leftEdge(s1), ra = course.rightEdge(s), rb = course.rightEdge(s1);
-    const wa = la - WALK_W, wb = lb - WALK_W;
+    const wa = la - course.walkW(s), wb = lb - course.walkW(s1);
     // お濠側の縁石 (柵の土台)
     band(s, s1, wa - 0.5, wa, wb - 0.5, wb, CURB_H + 0.35, C.walkEdge);
     wall(s, s1, wa - 0.5, wb - 0.5, -1.5, CURB_H + 0.35, C.walkEdge);
@@ -658,7 +686,7 @@ function buildCourseRoad(scene, course) {
     const dash = Math.floor(s / 4) % 3 !== 0;
     band(s, s1, la + 0.15, la + 0.3, lb + 0.15, lb + 0.3, 0.02, C.white, mpos, mcol);
     band(s, s1, ra - 0.3, ra - 0.15, rb - 0.3, rb - 0.15, 0.02, C.white, mpos, mcol);
-    if (course.nr(s) > 0.3 && course.nr(s1) > 0.3) {
+    if (course.nr(s) > 0.8 && course.nr(s1) > 0.8) {
       band(s, s1, -0.3, -0.15, -0.3, -0.15, 0.02, C.yellow, mpos, mcol);
       band(s, s1, 0.15, 0.3, 0.15, 0.3, 0.02, C.yellow, mpos, mcol);
     }
@@ -711,8 +739,13 @@ function addStartGate(scene, course) {
   const W = ur - ul;
   const tex = canvasTex(1024, 128, (c, w, h) => {
     c.fillStyle = '#d8342c'; c.fillRect(0, 0, w, h);
-    c.fillStyle = '#fff'; c.font = `bold 78px ${JP}`; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText('皇居ランナー  START / GOAL', w / 2, h / 2 + 4);
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    // 幅に収まる大きさの文字で
+    const text = '皇居ラン  START / GOAL';
+    let fs = 84;
+    c.font = `bold ${fs}px ${JP}`;
+    while (c.measureText(text).width > w - 60 && fs > 20) { fs -= 2; c.font = `bold ${fs}px ${JP}`; }
+    c.fillText(text, w / 2, h / 2 + 4);
   });
   const banner = new THREE.Mesh(new THREE.PlaneGeometry(W, 1.6), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }));
   banner.position.set(M.x, M.y + 5.4, M.z);
@@ -775,13 +808,51 @@ function addCastleGates(scene, course, G) {
       b.add(r);
     }
     g.add(b);
+    return [X, Z, rot];
   };
   gate(35.68590, 139.75880, 8, true);   // 大手門
-  gate(35.68930, 139.75735, 6, true);   // 平川門
+  const hirakawa = gate(35.68895, 139.75730, 6, true);   // 平川門
+  // 平川橋: 内堀通りからお濠を渡って平川門へ行く木の橋 (擬宝珠の欄干)
+  {
+    const [HX, HZ] = hirakawa;
+    const n = course.nearest(HX, HZ, 300);
+    if (n) {
+      const p = course.world(n.s, course.walkEdge(n.s) - 0.5);
+      const dx = HX - p.x, dz = HZ - p.z, L = Math.hypot(dx, dz);
+      const br = new THREE.Group();
+      br.position.set(p.x, p.y, p.z);
+      br.rotation.y = Math.atan2(dx, dz);
+      const wood = new THREE.MeshLambertMaterial({ color: 0x7a5a3a }), dark = new THREE.MeshLambertMaterial({ color: 0x4a3524 });
+      const gold = new THREE.MeshLambertMaterial({ color: 0xc9a23a });
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(5, 0.5, L - 8), wood);
+      deck.position.set(0, 0.3, (L - 8) / 2);
+      br.add(deck);
+      for (const sx of [-1, 1]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, L - 8), dark);
+        rail.position.set(sx * 2.4, 1.3, (L - 8) / 2);
+        br.add(rail);
+        for (let z = 0; z <= L - 8; z += (L - 8) / 6) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.3, 0.3), dark);
+          post.position.set(sx * 2.4, 0.9, z);
+          br.add(post);
+          const giboshi = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), gold);
+          giboshi.position.set(sx * 2.4, 1.7, z);
+          br.add(giboshi);
+        }
+      }
+      for (let z = 6; z < L - 10; z += 7) for (const sx of [-1.8, 1.8]) {
+        const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 8, 6), dark);
+        pier.position.set(sx, -3.8, z);
+        br.add(pier);
+      }
+      scene.add(br);
+    }
+  }
   gate(35.69215, 139.75385, 6, true);   // 清水門
   gate(35.69380, 139.74995, 7, true);   // 田安門
   gate(35.68220, 139.75700, 6, false);  // 坂下門
   scene.add(g);
+  return { hirakawa: [hirakawa[0], hirakawa[1]] };
 }
 
 // 楠木正成像 (皇居外苑): 台座の上の騎馬像
@@ -853,6 +924,7 @@ function addBalloon(scene, city) {
   g.position.set(rx, 0, rz);
   scene.add(g);
   return {
+    pos: [rx, BY, rz],
     update(t) {
       g.rotation.y = t * 0.08;
       ball.position.x = Math.sin(t * 0.5) * 1.2;
