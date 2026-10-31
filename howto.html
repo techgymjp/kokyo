@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>遊び方 - 皇居ランナー</title>
-<link rel="stylesheet" href="css/style.css?v=20261031180021">
+<link rel="stylesheet" href="css/style.css?v=20261031181253">
 </head>
 <body class="page">
-<main class="doc">
+<main class="doc" data-lang="ja">
   <h1>皇居ランナー 遊び方</h1>
   <p>ロードバイクで皇居を一周（約6km）。ランナーや歩行者、車やバイクをよけながら、二重橋前のゴールをめざします。</p>
   <h2>コース</h2>
@@ -34,5 +34,42 @@
   </ul>
   <p class="back"><a class="howto" href="./">← ゲームにもどる</a></p>
 </main>
+<main class="doc" data-lang="en" hidden>
+  <h1>Kokyo Runner: How to play</h1>
+  <p>Ride a road bike around the Imperial Palace in Tokyo (about 6 km). Dodge runners, pedestrians, cars and motorbikes, and finish at Nijubashi-mae.</p>
+  <h2>Course</h2>
+  <p>Start on Tokyo Metropolitan Route 301 at Nijubashi-mae, ride counterclockwise along the palace moats, and come back to Nijubashi-mae (about 5.9 km).</p>
+  <p class="route">Nijubashi-mae → Wadakura-mon → Otemon Gate → Hirakawa-mon Gate → Takebashi → Shimizu-mon Gate → Kudanshita → Tayasu-mon Gate (Nippon Budokan) → Top of Kudan-zaka → Chidorigafuchi → Chidorigafuchi Crossing → Hanzomon Gate → National Theatre → Miyakezaka → Sakuradamon Gate → Iwaidabashi → Nijubashi-mae</p>
+  <p>At landmarks along the way (Tokyo Station, Otemon Gate, Nippon Budokan, Chidorigafuchi, Hanzomon Gate, the National Diet Building, TECH GYM Tokyo, Sakuradamon Gate, Nijubashi Bridge and more), the camera switches to an angle that shows the landmark.</p>
+  <h2>Controls</h2>
+  <table class="keys">
+    <tr><th></th><th>PC</th><th>Phone</th></tr>
+    <tr><td>Left / Right</td><td>← → / A D</td><td>◀ ▶</td></tr>
+    <tr><td>Brake</td><td>↓ / S</td><td>Brake</td></tr>
+    <tr><td>Dash</td><td>↑ / W / Space</td><td>Dash</td></tr>
+  </table>
+  <h2>Rules</h2>
+  <ul class="rules">
+    <li>Stages go Morning → Day → Dusk → Night, with more people and traffic each time. Finish a stage to unlock the next one</li>
+    <li>You pedal automatically up to 40 km/h. <b>Dash</b> uses stamina only when it takes you above 40 km/h; at zero stamina you can't dash above 40 km/h (stamina recovers when you're not using it). Accelerating up to 40 km/h never uses stamina</li>
+    <li>Hills follow the real elevation: Kudan-zaka is a slow climb, and the Miyakezaka descent hits 80 km/h!</li>
+    <li>Hit a pedestrian, runner, car or motorbike and it's game over (just grazing the edge slows you down instead: "Grazed!"). Forcing your way between a pair or trio of runners also counts as a graze</li>
+    <li>Route 301 (Iwaidabashi → Otemon → Takebashi) is one-way: the leftmost lane is for runners and cars come from behind in the other lanes. Elsewhere, cars come toward you in the oncoming lanes</li>
+    <li>At Chidorigafuchi you ride the wrong way up a narrow one-lane road, so cars and motorbikes come straight at you. The wide sidewalk (Chidorigafuchi Ryokudo) is bumpy cobblestone and crowded. Which way you take is up to you</li>
+    <li>On the Day, Dusk and Night stages, an oni riding a cloud chases you from behind. Get caught and you're out</li>
+    <li>Just before Sakuradamon, Ii Naosuke's procession is crossing the road… slip through the gaps!</li>
+  </ul>
+  <p class="back"><a class="howto" href="./">← Back to the game</a></p>
+</main>
+<script>
+  (function () {
+    var l = null;
+    try { l = JSON.parse(localStorage.getItem('kokyo.lang')); } catch (e) {}
+    if (!l) l = (navigator.language || 'ja').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'en';
+    document.documentElement.lang = l;
+    document.querySelectorAll('main[data-lang]').forEach(function (m) { m.hidden = m.getAttribute('data-lang') !== l; });
+    if (l === 'en') document.title = 'How to play - Kokyo Runner';
+  })();
+</script>
 </body>
 </html>

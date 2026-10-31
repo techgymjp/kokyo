@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>皇居ランナー</title>
 <meta name="description" content="ロードバイクで皇居を一周。実在の東京 (PLATEAU 3D都市モデル・国土地理院の標高) で、ランナーや車をよけながら走り抜けるブラウザ3Dゲーム">
-<link rel="stylesheet" href="css/style.css?v=20261031180021">
+<link rel="stylesheet" href="css/style.css?v=20261031181253">
 </head>
 <body>
 <div id="app"></div>
 
-<div id="loading"><div class="logo">皇居ランナー</div><div id="loadMsg">読み込んでいます…</div></div>
+<div id="loading"><div class="logo" data-i18n="title">皇居ランナー</div><div id="loadMsg" data-i18n="loading">読み込んでいます…</div></div>
 
 <div id="hud" class="hidden">
   <div id="hTop">
@@ -19,39 +19,40 @@
     <div class="box"><div class="lbl">SCORE</div><div id="hScore">0</div></div>
   </div>
   <canvas id="minimap" width="240" height="240"></canvas>
-  <div id="hSide"><div>抜いた人 <b id="hPassed">0</b></div><div id="hLane"></div><div id="hGrade"></div><div id="hOni" class="hidden"></div></div>
+  <div id="hSide"><div><span data-i18n="passed">抜いた人</span> <b id="hPassed">0</b></div><div id="hLane"></div><div id="hGrade"></div><div id="hOni" class="hidden"></div></div>
   <div id="hSpeedBox"><span id="hSpeed">0</span><small>km/h</small>
-    <div class="stam"><div class="lbl">体力</div><div class="sbar"><div id="hStamina"></div></div></div>
+    <div class="stam"><div class="lbl" data-i18n="stamina">体力</div><div class="sbar"><div id="hStamina"></div></div></div>
   </div>
   <div id="msg"></div>
   <div id="showName"></div>
-  <div id="insetFrame" class="hidden"><span>うしろ</span></div>
+  <div id="insetFrame" class="hidden"><span data-i18n="behindCam">うしろ</span></div>
   <div id="pops"></div>
   <div id="count"></div>
   <button id="pauseBtn" class="icon">❚❚</button>
   <button id="muteBtn" class="icon">🔊</button>
   <div id="touch">
     <div class="left"><button id="tLeft">◀</button><button id="tRight">▶</button></div>
-    <div class="right"><button id="tBrake">ブレーキ</button><button id="tDash">ダッシュ</button></div>
+    <div class="right"><button id="tBrake" data-i18n="brake">ブレーキ</button><button id="tDash" data-i18n="dash">ダッシュ</button></div>
   </div>
   <div id="edge"></div>
   <div id="flashFx"></div>
 </div>
 
 <div id="title" class="panel hidden">
-  <h1>皇居ランナー</h1>
-  <p class="sub">ロードバイクで皇居を一周（約6km）。<br>ランナーや歩行者、車やバイクをよけながら、二重橋前のゴールをめざせ！</p>
-  <div class="row"><span>ステージ</span><div id="tod" class="seg"><button data-v="morning"></button><button data-v="day"></button><button data-v="dusk"></button><button data-v="night"></button></div></div>
-  <button id="startBtn" class="big">スタート</button>
+  <h1 data-i18n="title">皇居ランナー</h1>
+  <p class="sub" data-i18n-html="sub">ロードバイクで皇居を一周（約6km）。<br>ランナーや歩行者、車やバイクをよけながら、二重橋前のゴールをめざせ！</p>
+  <div class="row"><span data-i18n="stage">ステージ</span><div id="tod" class="seg"><button data-v="morning"></button><button data-v="day"></button><button data-v="dusk"></button><button data-v="night"></button></div></div>
+  <button id="startBtn" class="big" data-i18n="start">スタート</button>
   <div id="best"></div>
-  <a class="howto" href="howto.html">遊び方</a>
-  <p class="credit">建物: 国土交通省 PLATEAU ／ 標高・水面: 国土地理院 ／ 道路: © OpenStreetMap contributors ／ 街の3Dデータ: <a href="https://github.com/techgymjp/tarzan" target="_blank">ターザン大東京</a></p>
+  <a class="howto" href="howto.html" data-i18n="howto">遊び方</a>
+  <div class="row"><span data-i18n="lang">言語 / Language</span><div id="langSel" class="seg"><button data-v="ja">日本語</button><button data-v="en">English</button></div></div>
+  <p class="credit" data-i18n-html="credit">建物: 国土交通省 PLATEAU ／ 標高・水面: 国土地理院 ／ 道路: © OpenStreetMap contributors ／ 街の3Dデータ: <a href="https://github.com/techgymjp/tarzan" target="_blank">ターザン大東京</a></p>
 </div>
 
 <div id="pause" class="panel small hidden">
-  <h2>一時停止</h2>
-  <button id="resumeBtn" class="big">つづける</button>
-  <button id="quitBtn">タイトルへ</button>
+  <h2 data-i18n="pause">一時停止</h2>
+  <button id="resumeBtn" class="big" data-i18n="resume">つづける</button>
+  <button id="quitBtn" data-i18n="toTitle">タイトルへ</button>
 </div>
 
 <div id="result" class="panel small hidden">
@@ -61,12 +62,12 @@
   <div id="resStats"></div>
   <div id="resBest"></div>
   <div id="shareText" class="hidden"></div>
-  <button id="nextBtn" class="big hidden">次のステージへ</button>
-  <button id="retryBtn" class="big">もう一度</button>
-  <button id="shareBtn">シェアする</button>
-  <button id="titleBtn">タイトルへ</button>
+  <button id="nextBtn" class="big hidden" data-i18n="next">次のステージへ</button>
+  <button id="retryBtn" class="big" data-i18n="retry">もう一度</button>
+  <button id="shareBtn" data-i18n="share">シェアする</button>
+  <button id="titleBtn" data-i18n="toTitle">タイトルへ</button>
 </div>
 
-<script type="module" src="js/main.js?v=20261031180021"></script>
+<script type="module" src="js/main.js?v=20261031181253"></script>
 </body>
 </html>

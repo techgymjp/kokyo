@@ -1,15 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261031180021';
-import { ll } from './city.js?v=20261031180021';
-import { Terrain } from './terrain.js?v=20261031180021';
-import { createWorld, TOD_NAMES } from './world.js?v=20261031180021';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031180021';
-import { Sfx, Bgm } from './audio.js?v=20261031180021';
-import { Chaser } from './oni.js?v=20261031180021';
-import { Fireworks } from './fireworks.js?v=20261031180021';
-import { WATER } from './water-data.js?v=20261031180021';
-import { ROADS } from './road-data.js?v=20261031180021';
+import { Course, LANE_W } from './course.js?v=20261031181253';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261031181253';
+import { ll } from './city.js?v=20261031181253';
+import { Terrain } from './terrain.js?v=20261031181253';
+import { createWorld } from './world.js?v=20261031181253';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031181253';
+import { Sfx, Bgm } from './audio.js?v=20261031181253';
+import { Chaser } from './oni.js?v=20261031181253';
+import { Fireworks } from './fireworks.js?v=20261031181253';
+import { WATER } from './water-data.js?v=20261031181253';
+import { ROADS } from './road-data.js?v=20261031181253';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -61,10 +62,12 @@ addEventListener('resize', () => {
 });
 
 const loadMsg = (m) => { const e = $('loadMsg'); if (e) e.textContent = m; };
-loadMsg('コースを作っています…');
+applyStatic();
+if (LANG === 'en') document.title = 'Kokyo Runner';
+loadMsg(t('loadCourse'));
 const course = new Course();
 const terrain = new Terrain(course);
-loadMsg('街を組み立てています…');
+loadMsg(t('loadCity'));
 const world = createWorld({ renderer, scene, course, terrain, isTouch });
 const crowd = new Crowd(scene, 460);
 const bike = new Bike(scene);
@@ -150,7 +153,7 @@ let unlocked = store.get('unlocked', 0); // 開いているステージ (0: 朝�
 let tod = store.get('tod', 'morning');
 if (!(STAGES.indexOf(tod) >= 0 && STAGES.indexOf(tod) <= unlocked)) tod = 'morning';
 function setTod(k) {
-  if (STAGES.indexOf(k) > unlocked) { flash('🔒 前のステージをゴールすると開きます', 1.6); return; }
+  if (STAGES.indexOf(k) > unlocked) { flash(t('locked'), 1.6); return; }
   tod = k;
   world.applyTod(k);
   headMat.opacity = k === 'night' ? 1 : k === 'dusk' ? 0.7 : 0.25;
@@ -158,7 +161,7 @@ function setTod(k) {
     const i = STAGES.indexOf(b.dataset.v);
     b.classList.toggle('on', b.dataset.v === k);
     b.classList.toggle('locked', i > unlocked);
-    b.textContent = (i > unlocked ? '🔒 ' : '') + TOD_NAMES[b.dataset.v];
+    b.textContent = (i > unlocked ? '🔒 ' : '') + t('tod_' + b.dataset.v);
   });
   store.set('tod', k);
   showBest();
@@ -314,7 +317,7 @@ function startEvent() {
   ev.head = R;
   ev.len = off;
   game.event = ev;
-  flash('⚠ 桜田門外の変！ 井伊直弼の行列が横断中', 4, 'warn');
+  flash(t('event'), 4, 'warn');
   try {
     if ('speechSynthesis' in window && !sfx.muted) {
       const u = new SpeechSynthesisUtterance('したにー、したにー');
@@ -451,7 +454,7 @@ function popup(text, cls = '') {
 }
 function showBest() {
   const b = store.get('best.' + tod, null);
-  $('best').textContent = b ? `ベスト（${TOD_NAMES[tod]}）: ${fmtTime(b.time)}　スコア ${b.score}` : `ベスト（${TOD_NAMES[tod]}）: まだ記録なし`;
+  $('best').textContent = b ? t('best', { s: t('tod_' + tod), t: fmtTime(b.time), n: b.score }) : t('bestNone', { s: t('tod_' + tod) });
 }
 function toggleMute() {
   sfx.setMuted(!sfx.muted);
@@ -470,6 +473,10 @@ $('resumeBtn').onclick = () => togglePause();
 $('quitBtn').onclick = () => { $('pause').classList.add('hidden'); toTitle(); };
 $('muteBtn').onclick = () => toggleMute();
 document.querySelectorAll('#tod button').forEach((b) => { b.onclick = () => setTod(b.dataset.v); });
+document.querySelectorAll('#langSel button').forEach((b) => {
+  b.classList.toggle('on', b.dataset.v === LANG);
+  b.onclick = () => { if (b.dataset.v !== LANG) { setLang(b.dataset.v); location.reload(); } };
+});
 $('nextBtn').onclick = () => { const i = STAGES.indexOf(tod); if (i < unlocked) { setTod(STAGES[i + 1]); startGame(); } };
 $('shareBtn').onclick = () => {
   const text = $('shareText').textContent;
@@ -529,7 +536,7 @@ function startGame() {
   $('pause').classList.add('hidden');
   $('hud').classList.remove('hidden');
   if (!sfx.muted) bgm.start();
-  flash('二重橋前 スタート！ 大手門へ', 2);
+  flash(t('go'), 2);
 }
 
 function finish(ok) {
@@ -542,34 +549,34 @@ function finish(ok) {
     const t = game.t;
     stars = t < 8 * 60 ? 3 : t < 9.5 * 60 ? 2 : 1;
     game.score += Math.max(0, Math.round((12 * 60 - t) * 20));
-    title = '🏁 皇居一周 ゴール！';
+    title = t('goal');
     // ゴールの花火 (何回かに分けて、大きいのも)
     launchFireworks(5, false, 0.3);
     setTimeout(() => launchFireworks(4, true, 0.45), 1400);
     setTimeout(() => launchFireworks(7, false, 0.22), 2900);
     setTimeout(() => launchFireworks(3, true, 0.5), 4300);
-    flash('🎆 ゴール！', 2.5, 'place');
+    flash(t('goalFlash'), 2.5, 'place');
   } else title = '💥 ' + game.crashBy;
   const score = Math.round(game.score);
   $('resTitle').textContent = title;
   $('resStars').textContent = ok ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
-  $('resTime').textContent = ok ? fmtTime(game.t) : `${(dist / 1000).toFixed(2)} km 地点（${course.labelAt(dist)?.name || ''}のあたり）`;
-  $('resStats').innerHTML = `スコア <b>${score}</b><br>抜いた人 ${game.passed} 人 ／ ヒヤリ ${game.nearMiss} 回 ／ かすった ${game.grazes || 0} 回 ／ 最高 時速${Math.round(kmh(game.maxSpeed))}km`;
+  $('resTime').textContent = ok ? fmtTime(game.t) : t('resWhere', { km: (dist / 1000).toFixed(2), p: nm(course.labelAt(dist)?.name || '') });
+  $('resStats').innerHTML = t('resStats', { score, passed: game.passed, near: game.nearMiss, graze: game.grazes || 0, max: Math.round(kmh(game.maxSpeed)) });
   let best = store.get('best.' + tod, null), isBest = false;
   if (ok && (!best || game.t < best.time)) { best = { time: game.t, score }; store.set('best.' + tod, best); isBest = true; }
-  $('resBest').textContent = isBest ? '🎉 ベストタイム更新！' : best ? `ベスト ${fmtTime(best.time)}` : '';
+  $('resBest').textContent = isBest ? t('newBest') : best ? t('bestShort', { t: fmtTime(best.time) }) : '';
   // ゴールしたら次のステージが開く
   const si = STAGES.indexOf(tod);
   if (ok && si === unlocked && unlocked < STAGES.length - 1) {
     unlocked++;
     store.set('unlocked', unlocked);
-    $('resBest').textContent += `　🔓 次のステージ「${TOD_NAMES[STAGES[unlocked]]}」が開きました！`;
+    $('resBest').textContent += t('unlocked', { s: t('tod_' + STAGES[unlocked]) });
   }
   $('nextBtn').classList.toggle('hidden', !(ok && si < unlocked));
-  if (ok && si === STAGES.length - 1) $('resBest').textContent += '　🏆 全ステージ制覇！';
+  if (ok && si === STAGES.length - 1) $('resBest').textContent += t('allClear');
   $('shareText').textContent = ok
-    ? `#皇居ランナー でロードバイク皇居一周 ${fmtTime(game.t)}（${TOD_NAMES[tod]}のステージ）${'★'.repeat(stars)} スコア${score}`
-    : `#皇居ランナー で${(dist / 1000).toFixed(2)}km 地点で${game.crashBy}…（${TOD_NAMES[tod]}のステージ）`;
+    ? t('shareOk', { t: fmtTime(game.t), s: t('tod_' + tod), stars: '★'.repeat(stars), score })
+    : t('shareNg', { km: (dist / 1000).toFixed(2), why: game.crashBy, s: t('tod_' + tod) });
   setTimeout(() => $('result').classList.remove('hidden'), ok ? 4200 : 1400);
 }
 
@@ -581,7 +588,7 @@ function graze(o) {
   game.grazes = (game.grazes || 0) + 1;
   game.shake = Math.max(game.shake, 0.3);
   sfx.graze();
-  popup('かすった！', 'graze');
+  popup(t('graze'), 'graze');
   try { if (navigator.vibrate) navigator.vibrate([20, 20, 40]); } catch (e) { /* 振動できない端末 */ }
 }
 
@@ -729,7 +736,7 @@ function step(dt) {
       if (P.v < vmax) a += 3.2;
       if (!free) {
         P.stamina = Math.max(0, P.stamina - DASH_DRAIN * dt);
-        if (P.stamina <= 0) { P.dashLock = true; flash('体力ぎれ！ ダッシュを離して回復', 1.2); }
+        if (P.stamina <= 0) { P.dashLock = true; flash(t('noStamina'), 1.2); }
       }
     }
     if (!(dashing && !free)) P.stamina = Math.min(100, P.stamina + DASH_RECOVER * dt);
@@ -760,8 +767,8 @@ function step(dt) {
     const lb = course.labelAt(P.D);
     if (lb && lb !== game.lastLabel) {
       game.lastLabel = lb;
-      if (lb.name === '九段坂上') flash('千鳥ヶ淵へ：狭い道は対向車、歩道は石畳。どっちを行く？', 3, 'warn');
-      else if (P.D > 5) flash(lb.name, 1.6, 'place');
+      if (lb.name === '九段坂上') flash(t('chidori'), 3, 'warn');
+      else if (P.D > 5) flash(nm(lb.name), 1.6, 'place');
     }
     if (!game.eventDone && P.D > EVENT_S - 260) { game.eventDone = true; startEvent(); }
   } else if (game.state === 'crash') {
@@ -884,14 +891,14 @@ function step(dt) {
   // ---- 鬼 (昼・夕方・夜) ----
   if (playing && oni.active) {
     const gap = oni.update(dt, P, true);
-    if (game.oniGap > 60 && gap <= 60) { sfx.oniLaugh(); popup('👹 鬼が近い！ ダッシュ！', 'warn'); }
+    if (game.oniGap > 60 && gap <= 60) { sfx.oniLaugh(); popup(t('oniNear'), 'warn'); }
     game.oniGap = gap;
     game.beatT = (game.beatT || 0) - dt;
     if (gap < 70 && game.beatT <= 0) { sfx.heartbeat(); game.beatT = 0.35 + gap / 100; }
     // 降りてくるときは稲妻を落とす
     game.boltT = (game.boltT || 0) - dt;
     if (gap < 18 && game.boltT <= 0) { strike(); game.boltT = 0.9 + Math.random() * 0.6; }
-    if (gap < 2.5) { strike(true); crash('鬼に捕まった！'); }
+    if (gap < 2.5) { strike(true); crash(t('hitOni')); }
   }
   // ---- 当たり判定・抜いた・ヒヤリ ----
   if (playing) {
@@ -907,14 +914,14 @@ function step(dt) {
           continue;
         }
       }
-      if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash(p.hikyaku ? '飛脚と衝突！' : p.kind === 0 ? 'ランナーと衝突！' : '歩行者と衝突！'); break; }
+      if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash(t(p.hikyaku ? 'hitHikyaku' : p.kind === 0 ? 'hitRunner' : 'hitWalker')); break; }
       if (Math.abs(dd) < 1.0 && Math.abs(du) < GRAZE_PERSON) graze(p);
       if (!p.passed && dd < -0.8) {
         p.passed = true;
         game.passed++;
         const close = Math.abs(du) < 1.1;
         game.score += close ? 50 : 10;
-        if (close) { popup('すり抜け +50'); sfx.pass(); }
+        if (close) { popup(t('slip')); sfx.pass(); }
       }
     }
     for (const o of game.vehicles) {
@@ -923,11 +930,11 @@ function step(dt) {
         const pw = course.world(P.D, P.U, {});
         const rx = pw.x - o.wx, rz = pw.z - o.wz;
         const along = rx * o.fx + rz * o.fz, side = rx * o.fz - rz * o.fx;
-        if (Math.abs(along) < 0.85 + o.len / 2 && Math.abs(side) < o.wid / 2 + HIT_VEH) { crash('車にはねられた！'); break; }
+        if (Math.abs(along) < 0.85 + o.len / 2 && Math.abs(side) < o.wid / 2 + HIT_VEH) { crash(t('hitCar')); break; }
         continue;
       }
       const dd = o.d - P.D, du = o.u - P.U;
-      if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + HIT_VEH) { crash(o.kind === 'car' ? (o.dir > 0 ? '後ろから来た車にはねられた！' : '車にはねられた！') : 'バイクと衝突！'); break; }
+      if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + HIT_VEH) { crash(t(o.kind === 'car' ? (o.dir > 0 ? 'hitCarBehind' : 'hitCar') : 'hitMoto')); break; }
       if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + GRAZE_VEH) { graze(o); o.passed = true; }
       // 向こうから来る車: 進路に入っていたらクラクション
       if (o.dir < 0 && !o.honk && dd > 0 && dd < 50 && Math.abs(du) < 1.2 + o.wid / 2) { o.honk = true; o.kind === 'car' ? sfx.horn() : sfx.moto(0.3); }
@@ -935,12 +942,12 @@ function step(dt) {
       if (o.dir > 0 && o.kind === 'moto' && !o.passSnd && dd > -6 && Math.abs(du) < 8) { o.passSnd = true; sfx.motoPass(Math.abs(du) < 2.5 ? 0.38 : 0.26); }
       if (o.dir > 0 && !o.warned && dd < 0 && dd > -55 && Math.abs(du) < 1.5 + o.wid / 2) {
         o.warned = true;
-        if (o.kind === 'car') { sfx.horn(); popup('後ろから車！', 'warn'); } else { sfx.moto(0.35); popup('後ろからバイク！', 'warn'); }
+        if (o.kind === 'car') { sfx.horn(); popup(t('carBehind'), 'warn'); } else { sfx.moto(0.35); popup(t('motoBehind'), 'warn'); }
       }
       const passedNow = o.dir < 0 ? dd < -0.5 : dd > 0.5 || dd < -0.5;
       if (!o.passed && ((o.dir < 0 && dd < 0) || (o.dir > 0 && Math.abs(dd) < 0.3))) {
         o.passed = true;
-        if (Math.abs(du) < 1.3 + o.wid / 2) { game.nearMiss++; game.score += 300; popup('ヒヤリ！ +300', 'near'); sfx.near(); }
+        if (Math.abs(du) < 1.3 + o.wid / 2) { game.nearMiss++; game.score += 300; popup(t('near'), 'near'); sfx.near(); }
         else if (Math.abs(du) < 4) sfx.whoosh(o.kind === 'car' ? 0.25 : 0.18);
       }
       void passedNow;
@@ -949,12 +956,12 @@ function step(dt) {
     if (ev && game.state === 'play') {
       for (const m of ev.members) {
         const dd = EVENT_S + m.dd - P.D, du = ev.head + m.off - P.U;
-        if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash('井伊直弼の行列に突っこんだ！'); break; }
+        if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash(t('hitProcession')); break; }
         if (Math.abs(dd) < 1.0 && Math.abs(du) < GRAZE_PERSON) graze(m);
       }
       for (const k of ev.kagos) {
         const dd = EVENT_S - P.D, du = ev.head + k.off - 1.3 - P.U;
-        if (Math.abs(dd) < 1.8 && Math.abs(du) < 2.6) { crash('井伊直弼の馬車に突っこんだ！'); break; }
+        if (Math.abs(dd) < 1.8 && Math.abs(du) < 2.6) { crash(t('hitCarriage')); break; }
       }
     }
   }
@@ -1109,7 +1116,7 @@ function render(dt, time) {
       // プレイヤーと名所のあいだを見る (寄せすぎると自分が見えなくなるので、ふつうは半分まで)
       camLook.lerp(toL.lerp(pl, 0.35), (sc.o.look ?? 0.5) * showW);
     }
-      if ($('showName').textContent !== sc.o.name) $('showName').textContent = sc.o.name;
+      if ($('showName').textContent !== nm(sc.o.name)) $('showName').textContent = nm(sc.o.name);
   }
   // 名所の名前は画面の上部に (被写体を隠さないように)
   $('showName').style.opacity = Math.min(1, showW * 1.5).toFixed(2);
@@ -1156,20 +1163,20 @@ function updateHud() {
   st.style.width = P.stamina.toFixed(0) + '%';
   st.className = P.dashLock || P.stamina < 20 ? 'low' : game.dashing ? 'dash' : '';
   const nx = course.nextLabel(P.D);
-  $('hNext').textContent = nx ? `次: ${nx.name} ${Math.round(nx.s - P.D)}m` : 'ゴール 二重橋前';
+  $('hNext').textContent = nx ? t('next_', { p: nm(nx.name), m: Math.round(nx.s - P.D) }) : t('goalNext');
   const L = course.leftEdge(P.D);
   const RR = course.runnerRight(P.D), ow = course.oneway(P.D);
   const inCar = P.U >= RR;
-  const zone = P.U < L ? (onCobble(P.D, P.U) ? '歩道（石畳）' : '歩道') : !inCar ? 'ランナー車線' : ow ? '車線（後ろから車）⚠' : '対向車線 ⚠';
+  const zone = t(P.U < L ? (onCobble(P.D, P.U) ? 'zoneCobble' : 'zoneWalk') : !inCar ? 'zoneRunner' : ow ? 'zoneOneway' : 'zoneOncoming');
   $('hLane').textContent = zone;
   $('hLane').className = inCar ? 'danger' : '';
   document.body.classList.toggle('danger', inCar && game.state === 'play');
   const oe = $('hOni');
   oe.classList.toggle('hidden', !oni.active);
-  if (oni.active) { const gap = Math.max(0, P.D - oni.d); oe.textContent = `👹 鬼まで ${Math.round(gap)}m`; oe.className = gap < 40 ? 'near' : ''; }
+  if (oni.active) { const gap = Math.max(0, P.D - oni.d); oe.textContent = t('oniDist', { m: Math.round(gap) }); oe.className = gap < 40 ? 'near' : ''; }
   document.body.classList.toggle('oni', oni.active && game.state === 'play' && P.D - oni.d < 40);
   const g = course.grade(P.D) * 100;
-  $('hGrade').textContent = g > 1.2 ? `上り坂 ${g.toFixed(1)}%` : g < -1.2 ? `下り坂 ${(-g).toFixed(1)}%` : '';
+  $('hGrade').textContent = g > 1.2 ? t('up', { g: g.toFixed(1) }) : g < -1.2 ? t('down', { g: (-g).toFixed(1) }) : '';
   $('hGrade').className = g > 1.2 ? 'up' : 'down';
   mini.draw();
 }
