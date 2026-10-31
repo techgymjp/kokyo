@@ -109,7 +109,7 @@ const SHOW = [
       const c = (dx * f.tx + dz * f.tz) / Math.hypot(dx, dz); // -1 がまうしろ
       if (c < bc) { bc = c; best = d; }
     }
-    return { name: '国会議事堂', mode: 'front', s0: best - 45, s1: best + 45, c: best, p, look: 0.45, fov: 40, up: 3, dist: 10, clear: 30 };
+    return { name: '国会議事堂', mode: 'front', s0: best - 45, s1: best + 45, c: best, p, look: 0.14, fov: 34, up: 3.2, dist: 20, clear: 30 };
   })(),
   balloonSide,
   sideAt('桜田門', [world.castle.sakurada.pos[0], world.castle.sakurada.y + 9, world.castle.sakurada.pos[1]], lab('三宅坂'), lab('祝田橋'), 40, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55 }),
@@ -952,10 +952,10 @@ function render(dt, time) {
       camLook.lerp(sideLook, showW);
     } else if (sc.o.mode === 'front') {
       // 前から: プレイヤーの前に回り込み、自転車越しに後ろの名所を見る
-      const fwd = new THREE.Vector3(f.tx, 0, f.tz);
-      const toL = sc.o.v.clone().sub(pl).setY(0).normalize();
-      const fPos = pl.clone().addScaledVector(fwd, sc.o.dist || 10).addScaledVector(toL, -2).add(new THREE.Vector3(0, sc.o.up || 3, 0));
-      const fLook = pl.clone().lerp(sc.o.v, sc.o.look || 0.4);
+      // 名所 → プレイヤー の延長線上 (プレイヤーの前方) にカメラ。こちらへ走ってくるプレイヤーの後ろに名所
+      const fromL = pl.clone().sub(sc.o.v).setY(0).normalize();
+      const fPos = pl.clone().addScaledVector(fromL, sc.o.dist || 10).add(new THREE.Vector3(0, sc.o.up || 2.2, 0));
+      const fLook = pl.clone().lerp(sc.o.v, sc.o.look ?? 0.1);
       camPos.lerp(fPos, showW);
       camLook.lerp(fLook, showW);
     } else if (sc.o.mode === 'diag') {
