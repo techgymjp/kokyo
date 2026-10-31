@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261031181253';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261031181253';
-import { ll } from './city.js?v=20261031181253';
-import { Terrain } from './terrain.js?v=20261031181253';
-import { createWorld } from './world.js?v=20261031181253';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031181253';
-import { Sfx, Bgm } from './audio.js?v=20261031181253';
-import { Chaser } from './oni.js?v=20261031181253';
-import { Fireworks } from './fireworks.js?v=20261031181253';
-import { WATER } from './water-data.js?v=20261031181253';
-import { ROADS } from './road-data.js?v=20261031181253';
+import { Course, LANE_W } from './course.js?v=20261031195547';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261031195547';
+import { ll } from './city.js?v=20261031195547';
+import { Terrain } from './terrain.js?v=20261031195547';
+import { createWorld } from './world.js?v=20261031195547';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031195547';
+import { Sfx, Bgm } from './audio.js?v=20261031195547';
+import { Chaser } from './oni.js?v=20261031195547';
+import { Fireworks } from './fireworks.js?v=20261031195547';
+import { WATER } from './water-data.js?v=20261031195547';
+import { ROADS } from './road-data.js?v=20261031195547';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -73,7 +73,7 @@ const crowd = new Crowd(scene, 460);
 const bike = new Bike(scene);
 const oni = new Chaser(scene);
 const fireworks = new Fireworks(scene);
-function launchFireworks(n, big, gap) { for (const t of fireworks.show(camera, n, big, gap)) sfx.firework(t); }
+function launchFireworks(n, big, gap) { for (const d of fireworks.show(camera, n, big, gap)) sfx.firework(d); }
 const sfx = new Sfx();
 const bgm = new Bgm(sfx);
 const SAKURADA = course.labels.find((l) => l.name === '桜田門').s;
@@ -236,7 +236,7 @@ function makeVehicle(kind, dir, d, u, v, lane) {
   let mesh, len, wid, head, tail;
   if (kind === 'car') {
     const pool = [];
-    for (const t of CAR_TYPES) for (let i = 0; i < t.w; i++) pool.push(t);
+    for (const ty of CAR_TYPES) for (let i = 0; i < ty.w; i++) pool.push(ty);
     const type = pool[Math.floor(rnd() * pool.length)];
     const color = type.colors[Math.floor(rnd() * type.colors.length)];
     mesh = new THREE.Mesh(carGeometry(type, color), vehMat);
@@ -546,9 +546,9 @@ function finish(ok) {
   let title, stars = 0;
   if (ok) {
     sfx.finish();
-    const t = game.t;
-    stars = t < 8 * 60 ? 3 : t < 9.5 * 60 ? 2 : 1;
-    game.score += Math.max(0, Math.round((12 * 60 - t) * 20));
+    const time = game.t; // (t は翻訳の関数なので使わない)
+    stars = time < 8 * 60 ? 3 : time < 9.5 * 60 ? 2 : 1;
+    game.score += Math.max(0, Math.round((12 * 60 - time) * 20));
     title = t('goal');
     // ゴールの花火 (何回かに分けて、大きいのも)
     launchFireworks(5, false, 0.3);
@@ -1010,10 +1010,10 @@ function setShowLabel(name) {
   g.beginPath(); g.roundRect((512 - w) / 2, 4, w, 88, 44); g.fill();
   g.fillStyle = '#ffd36b'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText(name, 256, 50);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
   if (showLabel.material.map) showLabel.material.map.dispose();
-  showLabel.material.map = t;
+  showLabel.material.map = tex;
   showLabel.material.needsUpdate = true;
   showLabel.scale.set(0.95, 0.178, 1);
   showLabel.userData.name = name;

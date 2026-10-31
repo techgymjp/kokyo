@@ -137,3 +137,9 @@ html:has(body.page) { overflow: auto; height: auto; }
 }
 /* 前アングルの小窓が出ているときは、名所の名前をその中の上部に */
 body.inset #showName { top: max(10px, calc(env(safe-area-inset-top) + 8px)) !important; z-index: 4; font-size: 18px; padding: 3px 14px; }
+/* スマホの縦画面: ミニマップを上の3つの枠 (TIME・距離・SCORE) の下へ下げ、少し小さく */
+@media (orientation: portrait) and (max-width: 600px) {
+  #minimap, body.touch #minimap { top: calc(max(8px, env(safe-area-inset-top)) + 62px); width: 130px; height: 130px; }
+  #hSide, body.touch #hSide { top: calc(max(8px, env(safe-area-inset-top)) + 198px); }
+}
+.stam .lbl { white-space: nowrap; }
