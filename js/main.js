@@ -604,7 +604,7 @@ const mini = (() => {
       ctx.drawImage(c, 0, 0);
       // 車・バイク
       for (const o of game.vehicles) {
-        const p = course.world(o.d, o.u);
+        const p = o.free ? { x: o.wx, z: o.wz } : course.world(o.d, o.u);
         ctx.fillStyle = o.kind === 'car' ? '#3355aa' : '#aa3366';
         ctx.fillRect((p.x - x0) * S - 2, (p.z - z0) * S - 2, 4, 4);
       }
@@ -753,10 +753,12 @@ function step(dt) {
       if (game.motoBehindTimer <= 0) { game.motoBehindTimer = D.motoBehind * (0.5 + rnd()); if (P.v < 18) spawnMoto(1, P.D - 110); }
     }
     for (const o of game.vehicles) {
+      // 道路から外れた車 (一方通行の終わりの交差点): そのままの向きでまっすぐ走り去る
+      if (o.free) { o.wx += o.fx * o.v * dt; o.wz += o.fz * o.v * dt; continue; }
       // 前の車に近づいたら速さを合わせる
       let v = o.v0;
       for (const q of game.vehicles) {
-        if (q === o || q.dir !== o.dir || Math.abs(q.u - o.u) > 1.6) continue;
+        if (q === o || q.free || q.dir !== o.dir || Math.abs(q.u - o.u) > 1.6) continue;
         const gap = (q.d - o.d) * o.dir - (q.len + o.len) / 2;
         if (gap > 0 && gap < 12) v = Math.min(v, q.v * Math.max(0, (gap - 2) / 10));
       }
@@ -770,12 +772,18 @@ function step(dt) {
       o.d += o.v * o.dir * dt;
       if (o.kind === 'car') o.tu = o.ow ? owLaneU(o.lane, o.d) : carLaneU(o.lane, o.d);
       // 一方通行の区間に入る対向車は、その手前の交差点で曲がって消える
-      if (o.dir < 0 && course.oneway(o.d)) o.gone = true;
-      if (o.ow && !course.oneway(o.d) && o.kind === 'car') o.gone = true;
+      // 一方通行の区間に入る対向車と、一方通行の区間を出る車は、交差点で消さずに道路から外れてまっすぐ走り去る
+      if ((o.dir < 0 && course.oneway(o.d)) || (o.ow && !course.oneway(o.d) && o.kind === 'car')) {
+        const w = course.world(o.d, o.u, {});
+        o.free = true; o.wx = w.x; o.wz = w.z; o.wy = w.y;
+        o.yaw = w.yaw + (o.dir < 0 ? Math.PI : 0);
+        o.fx = Math.sin(o.yaw); o.fz = Math.cos(o.yaw);
+      }
       o.u += Math.max(-1, Math.min(1, o.tu - o.u)) * dt;
     }
     game.vehicles = game.vehicles.filter((o) => {
-      const keep = !o.gone && (o.dir < 0 ? o.d > P.D - 60 : o.d < P.D + 500 && o.d > P.D - 200);
+      const pf = course.frame(P.D);
+      const keep = o.free ? Math.hypot(o.wx - pf.x, o.wz - pf.z) < 400 : !o.gone && (o.dir < 0 ? o.d > P.D - 60 : o.d < P.D + 500 && o.d > P.D - 200);
       if (!keep) scene.remove(o.mesh);
       return keep;
     });
@@ -824,6 +832,14 @@ function step(dt) {
       }
     }
     for (const o of game.vehicles) {
+      if (o.free) {
+        // 道路の外へ走り去る車: 自転車の位置との距離で当たり判定
+        const pw = course.world(P.D, P.U, {});
+        const rx = pw.x - o.wx, rz = pw.z - o.wz;
+        const along = rx * o.fx + rz * o.fz, side = rx * o.fz - rz * o.fx;
+        if (Math.abs(along) < 0.85 + o.len / 2 && Math.abs(side) < o.wid / 2 + HIT_VEH) { crash('車にはねられた！'); break; }
+        continue;
+      }
       const dd = o.d - P.D, du = o.u - P.U;
       if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + HIT_VEH) { crash(o.kind === 'car' ? (o.dir > 0 ? '後ろから来た車にはねられた！' : '車にはねられた！') : 'バイクと衝突！'); break; }
       if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + GRAZE_VEH) { graze(o); o.passed = true; }
@@ -946,6 +962,12 @@ function render(dt, time) {
   if (bolt.t > 0) { bolt.t -= dt; bolt.mat.opacity = Math.max(0, Math.min(1, bolt.t * 5)) * (0.6 + Math.random() * 0.4); if (bolt.t <= 0) bolt.mesh.visible = false; }
   // 車
   for (const o of game.vehicles) {
+    if (o.free) {
+      o.mesh.position.set(o.wx, terrain.at(o.wx, o.wz) + 0.05, o.wz);
+      o.mesh.rotation.set(0, o.yaw, 0);
+      o.mesh.visible = true;
+      continue;
+    }
     const w = course.world(o.d, o.u, F2);
     o.mesh.position.set(w.x, w.y, w.z);
     o.mesh.rotation.set(0, w.yaw + (o.dir < 0 ? Math.PI : 0), 0);
