@@ -16,6 +16,7 @@ export const FAMOUS_SITES = [
   [35.68530, 139.74560, 70],  // 半蔵門のまわり
   [35.68528, 139.74505, 40],  // 半蔵門の土橋
   [35.67770, 139.75250, 45],  // 外桜田門
+  [35.69332, 139.74983, 190], // 日本武道館のまわり (両隣の建物を描かない)
 ];
 // 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
 const FAMOUS_LINES = [[35.67976, 139.76524, 35.68296, 139.76684, 70]];
@@ -186,7 +187,7 @@ export function addNijubashi(scene, G, waterLevelAt) {
   const lv = G(cx, cz);
   // 国土地理院の水面データにこの部分のお濠がないので、橋の下に水面と石垣を足し、橋はその上 (地面 + 7m) に架ける
   const ground = Math.max(G(AX, AZ), G(BX, BZ));
-  const deckY = ground + 4.5;
+  const deckY = ground + 7.5; // アーチが見える高さ
   g.position.set(cx, 0, cz);
   g.rotation.y = Math.atan2(BX - AX, BZ - AZ);
   // 暗い灰色の花崗岩 (写真の色)
@@ -249,6 +250,18 @@ export function addNijubashi(scene, G, waterLevelAt) {
     const bank = new THREE.Mesh(new THREE.BoxGeometry(120, 1.2, 2), granite);
     bank.position.set(0, ground + 0.6, sz * (L * 0.4 + 1));
     g.add(bank);
+  }
+  // 両端と真ん中の四角い石の柱 (欄干より高く)
+  for (const z of [-L / 2, 0, L / 2]) for (const sx of [-1, 1]) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(2.6, deckY - ground + 3.2, 2.6), granite);
+    p.position.set(sx * (W / 2 - 0.2), (ground + deckY + 3.2) / 2, z);
+    g.add(p);
+  }
+  // 両端の石垣 (橋のたもと)
+  for (const z of [-L / 2 - 6, L / 2 + 6]) {
+    const abut = new THREE.Mesh(new THREE.BoxGeometry(W + 6, deckY - ground + 1.2, 12), shade);
+    abut.position.set(0, (ground + deckY + 1.2) / 2 - 0.6, z);
+    g.add(abut);
   }
   scene.add(g);
   // 正門鉄橋 (奥の鉄の橋)

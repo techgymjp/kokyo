@@ -87,7 +87,7 @@ const closestS = (p, a, b) => { let best = a, bd = 1e18; for (let d = a; d <= b;
 const sideAt = (name, p, a, b, half = 55, opt = {}) => { const c = closestS(p, a, b); return { name, mode: 'side', s0: c - half, s1: c + half, c, p, dist: 9, look: 0.08, up: 2.4, ...opt }; };
 // 千鳥ヶ淵の見せ場: お濠の上 (道路の左 70m)
 const chidoriView = (() => { const d = lab('千鳥ヶ淵') - 40; const p = course.world(d, course.walkEdge(d) - 70); return [p.x, p.y - 2, p.z]; })();
-const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.5, up: 16, fov: 70, labelUp: 75 });
+const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 40, look: 0.13, up: 2, fov: 46, clear: 24, labelUp: 75 }); // 引いた所から、自転車とアドバルーンが両方入るように
 const SHOW = [
   sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 60, up: 7, look: 0.1, fov: 16, labelUp: 26, clear: 21 }), // 引いた所から望遠で、自転車と駅舎を重ねる
   sideAt('大手門', [world.castle.otemon.pos[0], world.castle.otemon.y + 8, world.castle.otemon.pos[1]], lab('和田倉門'), lab('竹橋'), 45, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55, labelUp: 16 }),
@@ -113,7 +113,7 @@ const SHOW = [
   })(),
   balloonSide,
   sideAt('桜田門', [world.castle.sakurada.pos[0], world.castle.sakurada.y + 9, world.castle.sakurada.pos[1]], lab('三宅坂'), lab('祝田橋'), 40, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55 }),
-  sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.35, up: 4, dist: 30, fov: 13, labelUp: 14 }),
+  sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 34, look: 0.1, up: 2.5, dist: 40, fov: 20, labelUp: 14 }), // 引いた所から望遠で、自転車の奥に二重橋
 ].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
 // 見せ場の視線 (カメラ → プレイヤー → 名所) をさえぎる木を取り除く
 world.clearTrees(SHOW.map((o) => {
@@ -860,6 +860,26 @@ function step(dt) {
 const crowdList = [];
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
 let showW = 0;
+// 前アングルの小窓 (国会議事堂)
+const inset = { cam: new THREE.PerspectiveCamera(34, 16 / 9, 0.5, 9000), pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 34, on: 0 };
+function renderInset() {
+  const el = $('insetFrame');
+  if (inset.on < 0.3) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const W = innerWidth, H = innerHeight;
+  const w = Math.round(Math.min(W * 0.36, 420)), h = Math.round(w * 9 / 16);
+  const x = Math.round((W - w) / 2), yTop = el.offsetTop || 60;
+  Object.assign(el.style, { width: w + 'px', height: h + 'px', left: x + 'px' });
+  const c = inset.cam;
+  c.fov = inset.fov; c.aspect = w / h; c.updateProjectionMatrix();
+  c.position.copy(inset.pos); c.lookAt(inset.look);
+  renderer.setScissorTest(true);
+  renderer.setScissor(x, H - yTop - h, w, h);
+  renderer.setViewport(x, H - yTop - h, w, h);
+  renderer.render(scene, c);
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, W, H);
+}
 // 見せ場の名所の上に浮かぶ名前
 const showLabel = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false, fog: false, sizeAttenuation: false }));
 showLabel.renderOrder = 10;
@@ -941,6 +961,7 @@ function render(dt, time) {
   camLook.set(ahead.x, ahead.y + 1.0, ahead.z);
   // 見せ場: 後ろからのまま、少し高く・後ろへ引いて、名所の方へ目を寄せる (プレイヤーが画面から出ない範囲で)
   const sc = showcase(P.D);
+  inset.on = 0;
   showW += ((game.state === 'play' || game.state === 'countdown' ? sc.w : 0) - showW) * Math.min(1, dt * 1.5);
   if (sc.o && showW > 0.01) {
     const pl = new THREE.Vector3(f.x, f.y + 1, f.z);
@@ -953,13 +974,12 @@ function render(dt, time) {
       camPos.lerp(sidePos, showW);
       camLook.lerp(sideLook, showW);
     } else if (sc.o.mode === 'front') {
-      // 前から: プレイヤーの前に回り込み、自転車越しに後ろの名所を見る
-      // 名所 → プレイヤー の延長線上 (プレイヤーの前方) にカメラ。こちらへ走ってくるプレイヤーの後ろに名所
+      // 前から見た小窓 (バックミラーのように): ふだんのカメラはそのまま後ろから。小窓に、こちらへ走ってくる自転車と後ろの名所
       const fromL = pl.clone().sub(sc.o.v).setY(0).normalize();
-      const fPos = pl.clone().addScaledVector(fromL, sc.o.dist || 10).add(new THREE.Vector3(0, sc.o.up || 2.2, 0));
-      const fLook = pl.clone().lerp(sc.o.v, sc.o.look ?? 0.1);
-      camPos.lerp(fPos, showW);
-      camLook.lerp(fLook, showW);
+      inset.pos.copy(pl).addScaledVector(fromL, sc.o.dist || 10).add(new THREE.Vector3(0, sc.o.up || 2.2, 0));
+      inset.look.copy(pl).lerp(sc.o.v, sc.o.look ?? 0.1);
+      inset.fov = sc.o.fov || 34;
+      inset.on = showW;
     } else if (sc.o.mode === 'diag') {
       // 斜め後ろから: 名所と反対側へ少しずらして高く、プレイヤーの先と名所のあいだを見る
       const fwd = new THREE.Vector3(f.tx, 0, f.tz), right = new THREE.Vector3(-f.tz, 0, f.tx);
@@ -990,7 +1010,7 @@ function render(dt, time) {
   let fov = 68 + sp * 18;
   // 横アングルで遠くの名所を写すときは望遠に (画角を狭く)
   const scf = showcase(P.D);
-  if (scf.o && scf.o.fov) fov += (scf.o.fov - fov) * showW;
+  if (scf.o && scf.o.fov && scf.o.mode !== 'front') fov += (scf.o.fov - fov) * showW;
   if (Math.abs(camera.fov - fov) > 0.1) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
   // 雪 (桜田門のあたり)
   const sn = THREE.MathUtils.clamp(1 - (Math.abs(P.D - EVENT_S) - 150) / 250, 0, 1);
@@ -1057,6 +1077,7 @@ function loop() {
   render(game.state === 'pause' ? 0 : dt, time);
   world.reflect(camera);
   renderer.render(scene, camera);
+  renderInset();
   updateHud();
   // 重いときは解像度を下げる
   fpsT += dt; fpsN++;
