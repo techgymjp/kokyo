@@ -811,7 +811,7 @@ function addCastleGates(scene, course, G) {
     g.add(b);
     return [X, Z, rot];
   };
-  gate(35.68590, 139.75880, 8, true);   // 大手門
+  const otemon = gate(35.68645, 139.75890, 8, true);   // 大手門
   const hirakawa = gate(35.68895, 139.75730, 6, true);   // 平川門
   // 平川橋: 内堀通りからお濠を渡って平川門へ行く木の橋 (擬宝珠の欄干)
   {
@@ -853,7 +853,7 @@ function addCastleGates(scene, course, G) {
   gate(35.69380, 139.74995, 7, true);   // 田安門
   gate(35.68220, 139.75700, 6, false);  // 坂下門
   scene.add(g);
-  return { hirakawa: [hirakawa[0], hirakawa[1]] };
+  return { hirakawa: [hirakawa[0], hirakawa[1]], otemon: [otemon[0], otemon[1]] };
 }
 
 // 楠木正成像 (皇居外苑): 台座の上の騎馬像

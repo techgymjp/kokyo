@@ -14,6 +14,8 @@ const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 if (isTouch) document.body.classList.add('touch');
 const DEBUG = location.search.includes('debug');
+// ?tour: 見せ場ツアー (見せ場を順に自動で回る。ぶつかってもゲームオーバーにならない)
+const TOUR = location.search.includes('tour');
 const store = {
   get(k, d) { try { const v = localStorage.getItem('kokyo.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('kokyo.' + k, JSON.stringify(v)); } catch (e) { /* 保存できなくても遊べる */ } },
@@ -88,6 +90,7 @@ const SHOW = [
   sideAt('日本武道館', at(...world.budokan.pos, 30), lab('九段下'), lab('九段坂上'), 60, { dist: 16, up: 4, fov: 50 }), // 田安門の前で横から
   sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 22), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 6, look: 0.1, fov: 36, labelUp: 26, clear: 26 }),
   sideAt('パレスホテル東京', at(world.famous.palaceHotel.x, world.famous.palaceHotel.z, 60), lab('二重橋前'), lab('大手門'), 40, { clear: 20, dist: 14, up: 1.2, look: 0.3, fov: 80, labelUp: 50 }),
+  sideAt('大手門', at(...world.castle.otemon, 10), lab('和田倉門'), lab('竹橋'), 45, { clear: 18, look: 0.15 }),
   sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),
   sideAt('半蔵門', at(...world.gates.hanzo, 6), lab('千鳥ヶ淵交差点'), lab('国立劇場'), 45),
   sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 13, look: 0.22, up: 0.8, labelUp: 34 }),
@@ -540,6 +543,7 @@ function graze(o) {
 
 function crash(by) {
   if (game.state !== 'play') return;
+  if (TOUR) return;
   game.state = 'crash';
   game.crashBy = by;
   game.crashT = 0;
@@ -665,7 +669,7 @@ function step(dt) {
     P.D += P.v * dt;
     game.maxSpeed = Math.max(game.maxSpeed, P.v);
     game.score += P.v * dt * (dashing ? 1.5 : 1);
-    if (P.D >= course.L) { finish(true); }
+    if (P.D >= course.L && !TOUR) { finish(true); }
     // 地名
     const lb = course.labelAt(P.D);
     if (lb && lb !== game.lastLabel) {
@@ -848,13 +852,13 @@ function setShowLabel(name) {
   c.width = 512; c.height = 96;
   const g = c.getContext('2d');
   // 札に収まる大きさの文字で
-  let fs = 52;
+  let fs = 70; // 短い名前は大きく、長い名前は札に収まるまで小さく
   const font = () => `bold ${fs}px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif`;
   g.font = font();
-  while (g.measureText(name).width > 450 && fs > 20) { fs -= 2; g.font = font(); }
+  while (g.measureText(name).width > 450 && fs > 24) { fs -= 2; g.font = font(); }
   const w = Math.min(500, g.measureText(name).width + 40);
   g.fillStyle = 'rgba(0,0,0,0.55)';
-  g.beginPath(); g.roundRect((512 - w) / 2, 8, w, 80, 40); g.fill();
+  g.beginPath(); g.roundRect((512 - w) / 2, 4, w, 88, 44); g.fill();
   g.fillStyle = '#ffd36b'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText(name, 256, 50);
   const t = new THREE.CanvasTexture(c);
@@ -862,7 +866,7 @@ function setShowLabel(name) {
   if (showLabel.material.map) showLabel.material.map.dispose();
   showLabel.material.map = t;
   showLabel.material.needsUpdate = true;
-  showLabel.scale.set(0.42, 0.079, 1);
+  showLabel.scale.set(0.95, 0.178, 1);
   showLabel.userData.name = name;
 }
 let camInit = false;
@@ -1033,5 +1037,25 @@ toTitle();
 }
 $('loading').classList.add('hidden');
 loop();
+
+// ---------- 見せ場ツアー ----------
+if (TOUR) {
+  const stops = SHOW.map((o) => ({ name: o.name, mode: o.mode, d: o.mode === 'side' ? o.c - 45 : o.s0 + 20 })).sort((a, b) => a.d - b.d);
+  let k = 0;
+  const go = () => {
+    if (game.state !== 'play' && game.state !== 'countdown') { startGame(); game.countdown = 0.05; }
+    const st = stops[k % stops.length];
+    P.D = st.d; P.U = course.leftEdge(st.d) + 1.4; P.v = V_CRUISE;
+    game.people = game.people.filter((p) => Math.abs(p.d - P.D) > 30);
+    game.frontier = Math.max(game.frontier, P.D + 30);
+    for (const o of game.vehicles) scene.remove(o.mesh);
+    game.vehicles.length = 0;
+    oni.active = false; oni.g.visible = false;
+    camInit = false;
+    flash(`見せ場ツアー ${k % stops.length + 1}/${stops.length}: ${st.name}（${st.mode === 'side' ? '横アングル' : '後ろから'}）`, 3, 'warn');
+    k++;
+  };
+  setTimeout(() => { go(); setInterval(go, 9000); }, 500);
+}
 
 if (DEBUG) window.dbg = { SHOW, oni, strike, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };

@@ -12,10 +12,21 @@ export const FAMOUS_SITES = [
   [35.67960, 139.74330, 70],  // 最高裁判所
   [35.67580, 139.75285, 55],  // 法務省 赤れんが棟
 ];
+// 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
+const FAMOUS_LINES = [[35.67960, 139.76630, 35.68280, 139.76790, 24]];
 export function hideFamousSites(city) {
   for (const [lat, lon, r] of FAMOUS_SITES) {
     const [X, Z] = ll(lat, lon);
     for (const bd of city.bld) if (bd.plateau && (bd.cx - X) ** 2 + (bd.cz - Z) ** 2 < r * r) bd.plateau = false;
+  }
+  for (const [la1, lo1, la2, lo2, r] of FAMOUS_LINES) {
+    const [ax, az] = ll(la1, lo1), [bx, bz] = ll(la2, lo2);
+    const ex = bx - ax, ez = bz - az, L2 = ex * ex + ez * ez;
+    for (const bd of city.bld) {
+      if (!bd.plateau) continue;
+      const t = Math.max(0, Math.min(1, ((bd.cx - ax) * ex + (bd.cz - az) * ez) / L2));
+      if (Math.hypot(bd.cx - ax - ex * t, bd.cz - az - ez * t) < r) bd.plateau = false;
+    }
   }
 }
 
