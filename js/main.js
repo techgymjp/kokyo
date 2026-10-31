@@ -1,15 +1,15 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261031174919';
-import { ll } from './city.js?v=20261031174919';
-import { Terrain } from './terrain.js?v=20261031174919';
-import { createWorld, TOD_NAMES } from './world.js?v=20261031174919';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031174919';
-import { Sfx, Bgm } from './audio.js?v=20261031174919';
-import { Chaser } from './oni.js?v=20261031174919';
-import { Fireworks } from './fireworks.js?v=20261031174919';
-import { WATER } from './water-data.js?v=20261031174919';
-import { ROADS } from './road-data.js?v=20261031174919';
+import { Course, LANE_W } from './course.js?v=20261031180021';
+import { ll } from './city.js?v=20261031180021';
+import { Terrain } from './terrain.js?v=20261031180021';
+import { createWorld, TOD_NAMES } from './world.js?v=20261031180021';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031180021';
+import { Sfx, Bgm } from './audio.js?v=20261031180021';
+import { Chaser } from './oni.js?v=20261031180021';
+import { Fireworks } from './fireworks.js?v=20261031180021';
+import { WATER } from './water-data.js?v=20261031180021';
+import { ROADS } from './road-data.js?v=20261031180021';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -110,7 +110,7 @@ const SHOW = [
       const c = (dx * f.tx + dz * f.tz) / Math.hypot(dx, dz); // -1 がまうしろ
       if (c < bc) { bc = c; best = d; }
     }
-    return { name: '国会議事堂', mode: 'front', s0: best - 45, s1: best + 45, c: best, p, look: 0.14, fov: 34, up: 3.2, dist: 20, clear: 30 };
+    return { name: '国会議事堂', mode: 'front', s0: best - 45, s1: best + 45, c: best, p, look: 0.12, fov: 30, up: 3.5, dist: 48, clear: 30 }; // 小窓のカメラは自転車の 48m 前: 前を走るランナーの後ろに自転車が見える
   })(),
   balloonSide,
   sideAt('桜田門', [world.castle.sakurada.pos[0], world.castle.sakurada.y + 9, world.castle.sakurada.pos[1]], lab('三宅坂'), lab('祝田橋'), 40, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55 }),
@@ -968,11 +968,12 @@ let showW = 0;
 const inset = { cam: new THREE.PerspectiveCamera(34, 16 / 9, 0.5, 9000), pos: new THREE.Vector3(), look: new THREE.Vector3(), fov: 34, on: 0 };
 function renderInset() {
   const el = $('insetFrame');
+  document.body.classList.toggle('inset', inset.on >= 0.3);
   if (inset.on < 0.3) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
   const W = innerWidth, H = innerHeight;
-  const w = Math.round(Math.min(W * 0.36, 420)), h = Math.round(w * 9 / 16);
-  const x = Math.round((W - w) / 2), yTop = el.offsetTop || 60;
+  const w = Math.round(Math.min(W * 0.42, 460)), h = Math.round(w * 9 / 16);
+  const x = Math.round((W - w) / 2), yTop = el.offsetTop;
   Object.assign(el.style, { width: w + 'px', height: h + 'px', left: x + 'px' });
   const c = inset.cam;
   c.fov = inset.fov; c.aspect = w / h; c.updateProjectionMatrix();

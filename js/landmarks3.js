@@ -1,8 +1,8 @@
 // コースから見える著名な建物 (手作り)。PLATEAU では箱になってしまうので、実際の形と色に近づける
 //   パレスホテル東京 (和田倉門)・パレスサイドビル (竹橋)・国立劇場・最高裁判所 (三宅坂)・法務省 赤れんが棟 (桜田門)
 import * as THREE from '../vendor/three.module.min.js';
-import { ll } from './city.js?v=20261031174919';
-import { hipGeo, canvasTex } from './landmarks.js?v=20261031174919';
+import { ll } from './city.js?v=20261031180021';
+import { hipGeo, canvasTex } from './landmarks.js?v=20261031180021';
 
 // 手作りに置き換える所 (この半径の中の PLATEAU の建物は描かない)
 export const FAMOUS_SITES = [
@@ -24,7 +24,7 @@ const FAMOUS_LINES = [[35.67976, 139.76524, 35.68296, 139.76684, 70]];
 export function hideFamousSites(city) {
   for (const [lat, lon, r] of FAMOUS_SITES) {
     const [X, Z] = ll(lat, lon);
-    for (const bd of city.bld) if (bd.plateau && (bd.cx - X) ** 2 + (bd.cz - Z) ** 2 < r * r) bd.plateau = false;
+    for (const bd of city.bld) if (bd.plateau && (bd.cx - X) ** 2 + (bd.cz - Z) ** 2 < r * r) { bd.plateau = false; bd.hidden = true; }
   }
   for (const [la1, lo1, la2, lo2, r] of FAMOUS_LINES) {
     const [ax, az] = ll(la1, lo1), [bx, bz] = ll(la2, lo2);
@@ -32,7 +32,7 @@ export function hideFamousSites(city) {
     for (const bd of city.bld) {
       if (!bd.plateau) continue;
       const t = Math.max(0, Math.min(1, ((bd.cx - ax) * ex + (bd.cz - az) * ez) / L2));
-      if (Math.hypot(bd.cx - ax - ex * t, bd.cz - az - ez * t) < r) bd.plateau = false;
+      if (Math.hypot(bd.cx - ax - ex * t, bd.cz - az - ez * t) < r) { bd.plateau = false; bd.hidden = true; }
     }
   }
 }
@@ -184,16 +184,24 @@ export function addNijubashi(scene, G, waterLevelAt, face) {
   const [BX, BZ] = ll(35.67985, 139.75438); // 石橋の正門側
   const [TX, TZ] = ll(35.68077, 139.75380); // 正門鉄橋
   const g = new THREE.Group();
-  const cx = (AX + BX) / 2, cz = (AZ + BZ) / 2;
+  let cx = (AX + BX) / 2, cz = (AZ + BZ) / 2;
   const L = Math.hypot(BX - AX, BZ - AZ);
-  const lv = G(cx, cz);
-  // 国土地理院の水面データにこの部分のお濠がないので、橋の下に水面と石垣を足し、橋はその上 (地面 + 7m) に架ける
-  const ground = Math.max(G(AX, AZ), G(BX, BZ));
-  const deckY = ground + 7.5; // アーチが見える高さ
-  g.position.set(cx, 0, cz);
   // 橋の向き: face の方へ横腹 (アーチ) を見せる
   let ax = BX - AX, az = BZ - AZ;
-  if (face) { const vx = face[0] - (AX + BX) / 2, vz = face[1] - (AZ + BZ) / 2; ax = -vz; az = vx; }
+  if (face) { const vx = face[0] - cx, vz = face[1] - cz; ax = -vz; az = vx; }
+  // 橋はお濠 (国土地理院の水面) の上に架ける: 広場の方へたどって最初に水面がある所
+  let lv = null;
+  if (face) {
+    const vx = face[0] - cx, vz = face[1] - cz, l = Math.hypot(vx, vz);
+    for (let t = 0; t < 120 && lv === null; t += 2) {
+      const px = cx + vx / l * t, pz = cz + vz / l * t, w = waterLevelAt && waterLevelAt(px, pz);
+      if (w !== null && w !== undefined) { lv = w; cx = px + vx / l * 4; cz = pz + vz / l * 4; }
+    }
+  }
+  if (lv === null) lv = G(cx, cz) - 3;
+  const ground = lv; // 水面の高さ
+  g.position.set(cx, 0, cz);
+  const deckY = ground + 7; // アーチが見える高さ
   g.rotation.y = Math.atan2(ax, az);
   // 暗い灰色の花崗岩 (写真の色)
   const granite = M(0x6e6c68), shade = M(0x5c5a56), iron = M(0x2a3a34), lamp = M(0xfff3cf, { emissive: 0x6a5a30 });
@@ -247,15 +255,11 @@ export function addNijubashi(scene, G, waterLevelAt, face) {
     g.add(vault);
   }
   // お濠の水面 (橋の両側へ広く) と、岸の石垣
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(120, L * 0.8), M(0x2f5a63, { emissive: 0x0a1418 }));
+  // お濠の水面 (橋の下を左右へ)。手前の芝生のすぐ奥が水面、その奥に橋
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(26, L + 70), M(0x3a6a6e, { emissive: 0x0c1a1c }));
   water.rotation.x = -Math.PI / 2;
-  water.position.set(0, ground + 0.12, 0);
+  water.position.set(0, ground + 0.05, 0);
   g.add(water);
-  for (const sz of [-1, 1]) {
-    const bank = new THREE.Mesh(new THREE.BoxGeometry(120, 1.2, 2), granite);
-    bank.position.set(0, ground + 0.6, sz * (L * 0.4 + 1));
-    g.add(bank);
-  }
   // 両端と真ん中の四角い石の柱 (欄干より高く)
   for (const z of [-L / 2, 0, L / 2]) for (const sx of [-1, 1]) {
     const p = new THREE.Mesh(new THREE.BoxGeometry(2.6, deckY - ground + 3.2, 2.6), granite);
@@ -287,7 +291,9 @@ export function addNijubashi(scene, G, waterLevelAt, face) {
   pier.position.set(0, -7.5, 0);
   t.add(pier);
   scene.add(t);
-  return { pos: new THREE.Vector3(cx, deckY + 4, cz) };
+  // お濠の範囲 (木を植えないように)
+  const ux = Math.cos(g.rotation.y), uz = -Math.sin(g.rotation.y);
+  return { pos: new THREE.Vector3(cx, deckY + 4, cz), moat: [cx - ux * 13, cz - uz * 13, cx + ux * 13, cz + uz * 13, L / 2 + 30] };
 }
 
 // ---- 大手門: 内堀通りからお濠を渡る土橋の先に高麗門、その右に石垣の上の大きな白い渡櫓門 (枡形)。両わきは白い塀 ----

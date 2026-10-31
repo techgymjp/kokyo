@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261031174919';
-import { CITY } from './city-data.js?v=20261031174919';
-import { ROADS } from './road-data.js?v=20261031174919';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261031174919';
-import { LANE_W, CURB_H } from './course.js?v=20261031174919';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261031174919';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261031174919';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon } from './landmarks3.js?v=20261031174919';
+import { City, ll } from './city.js?v=20261031180021';
+import { CITY } from './city-data.js?v=20261031180021';
+import { ROADS } from './road-data.js?v=20261031180021';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261031180021';
+import { LANE_W, CURB_H } from './course.js?v=20261031180021';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261031180021';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261031180021';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon } from './landmarks3.js?v=20261031180021';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -152,7 +152,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     g.lineJoin = 'round';
     g.lineWidth = 30 * gsx;
     for (const bd of city.bld) {
-      if (!bd.plateau && bd.base === undefined) continue;
+      if ((!bd.plateau && bd.base === undefined) || bd.hidden) continue; // 手作りに置き換えた所は塗らない
       if (bd.y0 > 0) continue;
       g.beginPath();
       for (let i = 0; i < bd.n; i++) {
@@ -594,6 +594,8 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       });
       tm.instanceMatrix.needsUpdate = im.instanceMatrix.needsUpdate = pm.instanceMatrix.needsUpdate = true;
     };
+    // 二重橋のお濠の上には木を植えない
+    clearTrees([nijubashi.moat]);
   }
 
   // ---------- 街灯 (歩道のお濠側) ----------
