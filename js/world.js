@@ -7,6 +7,7 @@ import { WATER, WATER_LEVEL } from './water-data.js';
 import { LANE_W, WALK_W, CURB_H } from './course.js';
 import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js';
 import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js';
+import { hideFamousSites, addFamous } from './landmarks3.js';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -91,6 +92,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     bd.base = base;
     if (hit) bd.plateau = false;
   }
+  hideFamousSites(city);
   city.buildMeshes(scene, mats);
   city.skipPier = (x, z) => course.onRoad(x, z, 3);
   city.buildRoads(scene);
@@ -122,6 +124,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const distant = addDistant(scene);
   place(() => addCastleGates(scene, course, G));
   place(() => addKusunoki(scene, G));
+  addFamous(scene, G);
 
   // ---------- 地面 (標高つき) ----------
   const GB = { x0: terrain.x0, z0: terrain.z0, x1: terrain.x0 + (terrain.nx - 1) * terrain.step, z1: terrain.z0 + (terrain.nz - 1) * terrain.step };
@@ -153,7 +156,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     const [PX0, PZ0] = ll(35.6832, 139.7556), [PX1, PZ1] = ll(35.6784, 139.7604);
     g.fillStyle = '#d3ccba';
     g.fillRect(gx(PX0), gz(PZ0), (PX1 - PX0) * gsx, (PZ1 - PZ0) * gsz);
-    g.fillStyle = '#5f7a4c';
+    g.fillStyle = '#6f9a4a';
     for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) {
       const cw = (PX1 - PX0) / 3, ch = (PZ1 - PZ0) / 4;
       g.fillRect(gx(PX0 + i * cw + 14), gz(PZ0 + j * ch + 14), (cw - 28) * gsx, (ch - 28) * gsz);
@@ -455,7 +458,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     }
     // 皇居前広場の芝生には黒松をたくさん
     const [QX0, QZ0] = ll(35.6832, 139.7556), [QX1, QZ1] = ll(35.6784, 139.7604);
-    for (let k = 0; k < 1600; k++) {
+    for (let k = 0; k < 2600; k++) {
       const x = QX0 + rnd() * (QX1 - QX0), z = QZ0 + rnd() * (QZ1 - QZ0);
       if (isGreen(x, z) && !course.onRoad(x, z, 2)) pts.push([x, z, rnd(), 1]);
     }
@@ -472,18 +475,44 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     }
     const crown = new THREE.IcosahedronGeometry(1, 0);
     crown.translate(0, 1.6, 0);
+    // 黒松: 斜めの幹から、平たい葉のかたまりが段になって横に張り出す
+    const pineParts = [];
+    for (const [x, y, z, r] of [[0.0, 0.0, 0.0, 1.0], [0.75, -0.35, 0.25, 0.7], [-0.6, -0.55, -0.35, 0.65], [0.25, 0.42, -0.2, 0.6], [-0.3, -0.15, 0.6, 0.55]]) {
+      const c = new THREE.IcosahedronGeometry(r, 1);
+      c.scale(1.25, 0.42, 1.25);
+      c.translate(x, y, z);
+      pineParts.push(c.toNonIndexed());
+    }
+    const pineGeo = new THREE.BufferGeometry();
+    {
+      const arr = [];
+      for (const g of pineParts) arr.push(...g.attributes.position.array);
+      pineGeo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+      pineGeo.computeVertexNormals();
+    }
     const trunk = new THREE.CylinderGeometry(0.18, 0.25, 1, 5);
     trunk.translate(0, 0.5, 0);
     const im = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ color: 0xffffff }), pts.length);
+    const pm = new THREE.InstancedMesh(pineGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), pts.length);
+    let np = 0;
+    const hide = new THREE.Matrix4().makeScale(0, 0, 0);
     const tm = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: 0x5a4636 }), pts.length);
     const m4 = new THREE.Matrix4(), col = new THREE.Color();
     pts.forEach(([x, z, r, kind, yy], i) => {
       const y = yy !== undefined ? yy : G(x, z);
       const sc = kind === 3 ? 3 + r * 1.5 : 4 + r * 5;
       if (kind === 1) {
-        // 黒松: 平たく横に広がった濃い緑
-        m4.makeScale(sc * 0.9, sc * 0.55, sc * 0.9).setPosition(x, y + 2.2, z);
-        col.setHSL(0.33, 0.35, 0.16 + r * 0.05);
+        // 黒松 (段になった平たい葉のかたまり、濃い緑)。幹は少し傾ける
+        const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, r * 6.28, 0));
+        m4.compose(new THREE.Vector3(x, y + sc * 0.62 + 1.2, z), q, new THREE.Vector3(sc * 0.6, sc * 0.75, sc * 0.6));
+        pm.setMatrixAt(np, m4);
+        pm.setColorAt(np, col.setHSL(0.3 + r * 0.04, 0.32, 0.15 + r * 0.06));
+        np++;
+        im.setMatrixAt(i, hide);
+        im.setColorAt(i, col);
+        m4.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler((r - 0.5) * 0.35, 0, (r - 0.3) * 0.3)), new THREE.Vector3(0.9, sc * 0.62 + 1.2, 0.9));
+        tm.setMatrixAt(i, m4);
+        return;
       } else if (kind === 2) {
         // 桜 (秋: 赤茶に色づいた葉)
         m4.makeScale(sc * 1.1, sc * 0.75, sc * 1.1).setPosition(x, y + 1.4, z);
@@ -501,7 +530,8 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       m4.makeScale(1, kind === 0 ? 2 : 3.2, 1).setPosition(x, y, z);
       tm.setMatrixAt(i, m4);
     });
-    scene.add(im, tm);
+    pm.count = np;
+    scene.add(im, tm, pm);
   }
 
   // ---------- 街灯 (歩道のお濠側) ----------

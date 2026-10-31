@@ -885,4 +885,4 @@ toTitle();
 $('loading').classList.add('hidden');
 loop();
 
-if (DEBUG) window.dbg = { snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
+if (DEBUG) window.dbg = { oni, strike, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
