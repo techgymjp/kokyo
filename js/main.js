@@ -9,6 +9,7 @@ import { Sfx, Bgm } from './audio.js';
 import { Chaser } from './oni.js';
 import { Fireworks } from './fireworks.js';
 import { WATER } from './water-data.js';
+import { ROADS } from './road-data.js';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -87,7 +88,7 @@ const closestS = (p, a, b) => { let best = a, bd = 1e18; for (let d = a; d <= b;
 const sideAt = (name, p, a, b, half = 55, opt = {}) => { const c = closestS(p, a, b); return { name, mode: 'side', s0: c - half, s1: c + half, c, p, dist: 9, look: 0.08, up: 2.4, ...opt }; };
 // 千鳥ヶ淵の見せ場: お濠の上 (道路の左 70m)
 const chidoriView = (() => { const d = lab('千鳥ヶ淵') - 40; const p = course.world(d, course.walkEdge(d) - 70); return [p.x, p.y - 2, p.z]; })();
-const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 40, look: 0.13, up: 2, fov: 46, clear: 24, labelUp: 75 }); // 引いた所から、自転車とアドバルーンが両方入るように
+const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 25, look: 0.07, up: 2, fov: 56, clear: 24, labelUp: 75 }); // 自転車が画面の中ほどに大きく、上にアドバルーン // 引いた所から、自転車とアドバルーンが両方入るように
 const SHOW = [
   sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 60, up: 7, look: 0.1, fov: 16, labelUp: 26, clear: 21 }), // 引いた所から望遠で、自転車と駅舎を重ねる
   sideAt('大手門', [world.castle.otemon.pos[0], world.castle.otemon.y + 8, world.castle.otemon.pos[1]], lab('和田倉門'), lab('竹橋'), 45, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55, labelUp: 16 }),
@@ -571,7 +572,7 @@ function crash(by) {
 
 // ---------- ミニマップ (お濠とコース。進行方向が上) ----------
 const mini = (() => {
-  const S = 0.32; // px / m
+  const S = 0.62; // px / m (拡大して、まわりの道とお濠がよくわかるように)
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   for (let i = 0; i < course.N; i += 10) { x0 = Math.min(x0, course.X[i]); x1 = Math.max(x1, course.X[i]); z0 = Math.min(z0, course.Z[i]); z1 = Math.max(z1, course.Z[i]); }
   x0 -= 400; x1 += 400; z0 -= 400; z1 += 400;
@@ -585,11 +586,35 @@ const mini = (() => {
     for (const ring of poly) { for (let i = 0; i < ring.length; i += 2) { const x = (ring[i] / 2 - x0) * S, y = (ring[i + 1] / 2 - z0) * S; if (i) g.lineTo(x, y); else g.moveTo(x, y); } g.closePath(); }
     g.fill('evenodd');
   }
-  g.strokeStyle = '#ffffff'; g.lineWidth = 7; g.lineJoin = 'round';
+  // ほかの道 (実際の幅)
+  g.strokeStyle = '#d6d3cc'; g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const r of ROADS) {
+    g.lineWidth = Math.max(2, r[0] * S);
+    g.beginPath();
+    for (let i = 1; i + 1 < r.length; i += 2) { const x = (r[i] / 2 - x0) * S, y = (r[i + 1] / 2 - z0) * S; if (i > 1) g.lineTo(x, y); else g.moveTo(x, y); }
+    g.stroke();
+  }
+  // コースの道路: 歩道からいちばん右の車線まで、場所ごとの実際の幅で
+  g.fillStyle = '#ffffff';
+  const quad = (i, k, uA, uB, col) => {
+    g.fillStyle = col;
+    g.beginPath();
+    for (const [j, u] of [[i, uA], [k, uA], [k, uB], [i, uB]]) {
+      const x = (course.X[j] - course.TZ[j] * u - x0) * S, y = (course.Z[j] + course.TX[j] * u - z0) * S;
+      g.lineTo(x, y);
+    }
+    g.closePath(); g.fill();
+  };
+  for (let i = 0; i < course.N; i += 2) {
+    const k = (i + 3) % course.N, s0 = i;
+    const L = course.leftEdge(s0), R = Math.max(course.rightEdge(s0), 0) + 3.5;
+    quad(i, k, L - course.walkW(s0), R, '#ffffff');
+    quad(i, k, L, course.runnerRight(s0), '#f6c9bf'); // ランナーの車線 (うすい赤)
+  }
+  g.strokeStyle = '#e0533d'; g.lineWidth = 1.5;
   g.beginPath();
-  for (let i = 0; i <= course.N; i += 3) { const k = i % course.N; const x = (course.X[k] - x0) * S, y = (course.Z[k] - z0) * S; if (i) g.lineTo(x, y); else g.moveTo(x, y); }
+  for (let i = 0; i <= course.N; i += 3) { const k = i % course.N; const u = course.leftEdge(k) + 1.6; const x = (course.X[k] - course.TZ[k] * u - x0) * S, y = (course.Z[k] + course.TX[k] * u - z0) * S; if (i) g.lineTo(x, y); else g.moveTo(x, y); }
   g.closePath(); g.stroke();
-  g.strokeStyle = '#e0533d'; g.lineWidth = 2.5; g.stroke();
   const el = $('minimap'), ctx = el.getContext('2d');
   return {
     draw() {
@@ -598,20 +623,21 @@ const mini = (() => {
       ctx.save();
       ctx.clearRect(0, 0, W, H);
       ctx.beginPath(); ctx.arc(W / 2, H / 2, W / 2 - 2, 0, Math.PI * 2); ctx.clip();
-      ctx.translate(W / 2, H / 2 + 20);
+      ctx.translate(W / 2, H / 2 + 30);
       ctx.rotate(-Math.atan2(f.tx, -f.tz));
       ctx.translate(-px, -py);
       ctx.drawImage(c, 0, 0);
       // 車・バイク
       for (const o of game.vehicles) {
-        const p = o.free ? { x: o.wx, z: o.wz } : course.world(o.d, o.u);
+        if (o.free) continue;
+        const p = course.world(o.d, o.u);
         ctx.fillStyle = o.kind === 'car' ? '#3355aa' : '#aa3366';
         ctx.fillRect((p.x - x0) * S - 2, (p.z - z0) * S - 2, 4, 4);
       }
       ctx.restore();
       // 自分 (青い矢印)
       ctx.fillStyle = '#1e6bff';
-      ctx.beginPath(); ctx.moveTo(W / 2, H / 2 + 12); ctx.lineTo(W / 2 - 7, H / 2 + 28); ctx.lineTo(W / 2 + 7, H / 2 + 28); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(W / 2, H / 2 + 18); ctx.lineTo(W / 2 - 10, H / 2 + 40); ctx.lineTo(W / 2 + 10, H / 2 + 40); ctx.fill();
     },
   };
 })();
@@ -754,7 +780,7 @@ function step(dt) {
     }
     for (const o of game.vehicles) {
       // 道路から外れた車 (一方通行の終わりの交差点): そのままの向きでまっすぐ走り去る
-      if (o.free) { o.wx += o.fx * o.v * dt; o.wz += o.fz * o.v * dt; continue; }
+      if (o.free) { o.wx += o.fx * o.v * dt; o.wz += o.fz * o.v * dt; o.freeT = (o.freeT || 0) + dt; continue; }
       // 前の車に近づいたら速さを合わせる
       let v = o.v0;
       for (const q of game.vehicles) {
@@ -783,7 +809,8 @@ function step(dt) {
     }
     game.vehicles = game.vehicles.filter((o) => {
       const pf = course.frame(P.D);
-      const keep = o.free ? Math.hypot(o.wx - pf.x, o.wz - pf.z) < 400 : !o.gone && (o.dir < 0 ? o.d > P.D - 60 : o.d < P.D + 500 && o.d > P.D - 200);
+      // 走り去る車は交差点を抜ける 3 秒だけ (お濠や公園に入っていかないように)
+      const keep = o.free ? o.freeT < 3 && world.waterLevelAt(o.wx + o.fx * 4, o.wz + o.fz * 4) === null && Math.hypot(o.wx - pf.x, o.wz - pf.z) < 400 : !o.gone && (o.dir < 0 ? o.d > P.D - 60 : o.d < P.D + 500 && o.d > P.D - 200);
       if (!keep) scene.remove(o.mesh);
       return keep;
     });
