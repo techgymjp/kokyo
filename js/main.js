@@ -25,8 +25,11 @@ const V_DASH = 62 / 3.6;    // ダッシュでこいで出せる速さ (下り�
 const V_WALK = 22 / 3.6;    // 歩道の上
 const G_AMP = 3.5;          // 坂の効き目 (三宅坂の下りで時速80km くらい)
 const DRAG = 0.0022;        // 空気抵抗 (v^2)
-// 当たり判定の左右の幅 (自転車の中心から相手の中心まで)。人は 0.34m、車とバイクは車幅の半分 + 0.05m
-const HIT_PERSON = 0.34, HIT_VEH = 0.05;
+// 当たり判定の左右の幅 (自転車の中心から相手の中心まで)。
+// 深く当たったら衝突 (ゲームオーバー)、端をかすめただけなら「かすった」(効果音を変えて減速)
+const HIT_PERSON = 0.24, GRAZE_PERSON = 0.42;   // 人
+const HIT_VEH = -0.1, GRAZE_VEH = 0.15;         // 車とバイク (車幅の半分 + この値)
+const GRAZE_SLOW = 0.55;                        // かすったときに残る速さの割合
 const DASH_DRAIN = 22, DASH_RECOVER = 14; // 体力 (100) の減り方・戻り方 /秒
 
 // ステージ = 時間帯。朝 (ふつう) → 昼 → 夕方 → 夜 の順に人も車も増える。ゴールすると次のステージが開く
@@ -423,7 +426,7 @@ function startGame() {
   clearActors();
   seed = (Date.now() % 100000) + 1;
   resetPlayer();
-  Object.assign(game, { state: 'countdown', countdown: 3.2, t: 0, score: 0, passed: 0, nearMiss: 0, maxSpeed: 0, lastLabel: null, crashT: 0, eventDone: false, finishT: 0 });
+  Object.assign(game, { state: 'countdown', countdown: 3.2, t: 0, grazes: 0, score: 0, passed: 0, nearMiss: 0, maxSpeed: 0, lastLabel: null, crashT: 0, eventDone: false, finishT: 0 });
   game.frontier = P.D - 40;
   fillPeople(P.D + 360);
   initTraffic();
@@ -453,7 +456,7 @@ function finish(ok) {
   $('resTitle').textContent = title;
   $('resStars').textContent = ok ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('resTime').textContent = ok ? fmtTime(game.t) : `${(dist / 1000).toFixed(2)} km 地点（${course.labelAt(dist)?.name || ''}のあたり）`;
-  $('resStats').innerHTML = `スコア <b>${score}</b><br>抜いた人 ${game.passed} 人 ／ ヒヤリ ${game.nearMiss} 回 ／ 最高 時速${Math.round(kmh(game.maxSpeed))}km`;
+  $('resStats').innerHTML = `スコア <b>${score}</b><br>抜いた人 ${game.passed} 人 ／ ヒヤリ ${game.nearMiss} 回 ／ かすった ${game.grazes || 0} 回 ／ 最高 時速${Math.round(kmh(game.maxSpeed))}km`;
   let best = store.get('best.' + tod, null), isBest = false;
   if (ok && (!best || game.t < best.time)) { best = { time: game.t, score }; store.set('best.' + tod, best); isBest = true; }
   $('resBest').textContent = isBest ? '🎉 ベストタイム更新！' : best ? `ベスト ${fmtTime(best.time)}` : '';
@@ -470,6 +473,18 @@ function finish(ok) {
     ? `#皇居ランナー でロードバイク皇居一周 ${fmtTime(game.t)}（${TOD_NAMES[tod]}のステージ）${'★'.repeat(stars)} スコア${score}`
     : `#皇居ランナー で${(dist / 1000).toFixed(2)}km 地点で${game.crashBy}…（${TOD_NAMES[tod]}のステージ）`;
   setTimeout(() => $('result').classList.remove('hidden'), ok ? 800 : 1400);
+}
+
+// かすった: ゲームオーバーにはせず、ガリッという音と減速 (同じ相手には1回だけ)
+function graze(o) {
+  if (o.grazed || game.state !== 'play') return;
+  o.grazed = true;
+  P.v *= GRAZE_SLOW;
+  game.grazes = (game.grazes || 0) + 1;
+  game.shake = Math.max(game.shake, 0.3);
+  sfx.graze();
+  popup('かすった！', 'graze');
+  try { if (navigator.vibrate) navigator.vibrate([20, 20, 40]); } catch (e) { /* 振動できない端末 */ }
 }
 
 function crash(by) {
@@ -711,6 +726,7 @@ function step(dt) {
       const dd = p.d - P.D, du = p.u - P.U;
       // 当たり判定: 前後はそのまま、左右は緩め (体の端をかすめるくらいはセーフ)
       if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash(p.hikyaku ? '飛脚と衝突！' : p.kind === 0 ? 'ランナーと衝突！' : '歩行者と衝突！'); break; }
+      if (Math.abs(dd) < 1.0 && Math.abs(du) < GRAZE_PERSON) graze(p);
       if (!p.passed && dd < -0.8) {
         p.passed = true;
         game.passed++;
@@ -722,6 +738,7 @@ function step(dt) {
     for (const o of game.vehicles) {
       const dd = o.d - P.D, du = o.u - P.U;
       if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + HIT_VEH) { crash(o.kind === 'car' ? (o.dir > 0 ? '後ろから来た車にはねられた！' : '車にはねられた！') : 'バイクと衝突！'); break; }
+      if (Math.abs(dd) < 0.85 + o.len / 2 && Math.abs(du) < o.wid / 2 + GRAZE_VEH) { graze(o); o.passed = true; }
       // 向こうから来る車: 進路に入っていたらクラクション
       if (o.dir < 0 && !o.honk && dd > 0 && dd < 50 && Math.abs(du) < 1.2 + o.wid / 2) { o.honk = true; o.kind === 'car' ? sfx.horn() : sfx.moto(0.3); }
       if (o.dir > 0 && !o.warned && dd < 0 && dd > -55 && Math.abs(du) < 1.5 + o.wid / 2) {
@@ -741,6 +758,7 @@ function step(dt) {
       for (const m of ev.members) {
         const dd = EVENT_S + m.dd - P.D, du = ev.head + m.off - P.U;
         if (Math.abs(dd) < 1.0 && Math.abs(du) < HIT_PERSON) { crash('井伊直弼の行列に突っこんだ！'); break; }
+        if (Math.abs(dd) < 1.0 && Math.abs(du) < GRAZE_PERSON) graze(m);
       }
       for (const k of ev.kagos) {
         const dd = EVENT_S - P.D, du = ev.head + k.off - 1.3 - P.U;

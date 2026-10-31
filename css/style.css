@@ -100,3 +100,4 @@ html:has(body.page) { overflow: auto; height: auto; }
 .doc .rules { font-size: 15px; }
 .doc .route { font-size: 13px; opacity: 0.85; }
 .doc .back { text-align: center; margin-top: 28px; }
+.pop.graze { color: #ffb347; font-size: 22px; }

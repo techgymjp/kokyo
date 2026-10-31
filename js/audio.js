@@ -178,6 +178,7 @@ export class Sfx {
   moto(v = 0.25) { this.tone(95, 0.9, v * 0.5, 'sawtooth', 1.6); this.burst(0.8, 400, 1400, v * 0.6, 'bandpass', 3); }
   curb() { this.tone(110, 0.08, 0.25, 'sine', 0.6); this.burst(0.06, 1200, 300, 0.15, 'lowpass'); }
   thunder(big) { this.burst(big ? 1.6 : 0.9, 2500, 60, big ? 0.9 : 0.55, 'lowpass', 0.7); this.tone(45, big ? 1.2 : 0.6, 0.5, 'sine', 0.6); }
+  graze() { this.burst(0.22, 4200, 1800, 0.35, 'bandpass', 4); this.tone(1900, 0.12, 0.06, 'sawtooth', 0.7); this.tone(220, 0.1, 0.12, 'square', 0.8, 0.02); }
   cobble() { this.burst(0.04, 900 + Math.random() * 600, 200, 0.07, 'lowpass'); }
   pass() { this.tone(1320, 0.06, 0.05, 'triangle'); }
   drum(delay = 0) { this.tone(70, 0.3, 0.5, 'sine', 0.6, delay); this.burst(0.1, 500, 120, 0.2, 'lowpass'); }
