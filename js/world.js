@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261031174031';
-import { CITY } from './city-data.js?v=20261031174031';
-import { ROADS } from './road-data.js?v=20261031174031';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261031174031';
-import { LANE_W, CURB_H } from './course.js?v=20261031174031';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261031174031';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261031174031';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon } from './landmarks3.js?v=20261031174031';
+import { City, ll } from './city.js?v=20261031174642';
+import { CITY } from './city-data.js?v=20261031174642';
+import { ROADS } from './road-data.js?v=20261031174642';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261031174642';
+import { LANE_W, CURB_H } from './course.js?v=20261031174642';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261031174642';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261031174642';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon } from './landmarks3.js?v=20261031174642';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -351,7 +351,15 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     return { levelAt, water, waterMat, rt };
   }
   city.waterAt = (x, z) => (waterInfo.levelAt(x, z) !== null ? 1 : 0);
-  const nijubashi = addNijubashi(scene, G, waterInfo.levelAt);
+  // 二重橋は皇居前広場 (内堀通り) の方へ横腹を見せる (広場から2つのアーチが見える)
+  const nijuFace = (() => {
+    // ゴール手前 (祝田橋 → 二重橋前) の内堀通りで、橋にいちばん近い所
+    const [x, z] = ll(35.67973, 139.75457);
+    let best = null, bd = 1e18;
+    for (let d = course.L - 300; d < course.L; d += 2) { const p = course.frame(d); const q = (p.x - x) ** 2 + (p.z - z) ** 2; if (q < bd) { bd = q; best = [p.x, p.z]; } }
+    return best;
+  })();
+  const nijubashi = addNijubashi(scene, G, waterInfo.levelAt, nijuFace);
 
   // 水面の映り込み: いちばん近い水面の高さを鏡にして、カメラを上下反転した所から描く (three.js の Reflector と同じ方法)
   const mirrorCam = new THREE.PerspectiveCamera();

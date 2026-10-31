@@ -1,15 +1,15 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261031174031';
-import { ll } from './city.js?v=20261031174031';
-import { Terrain } from './terrain.js?v=20261031174031';
-import { createWorld, TOD_NAMES } from './world.js?v=20261031174031';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031174031';
-import { Sfx, Bgm } from './audio.js?v=20261031174031';
-import { Chaser } from './oni.js?v=20261031174031';
-import { Fireworks } from './fireworks.js?v=20261031174031';
-import { WATER } from './water-data.js?v=20261031174031';
-import { ROADS } from './road-data.js?v=20261031174031';
+import { Course, LANE_W } from './course.js?v=20261031174642';
+import { ll } from './city.js?v=20261031174642';
+import { Terrain } from './terrain.js?v=20261031174642';
+import { createWorld, TOD_NAMES } from './world.js?v=20261031174642';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031174642';
+import { Sfx, Bgm } from './audio.js?v=20261031174642';
+import { Chaser } from './oni.js?v=20261031174642';
+import { Fireworks } from './fireworks.js?v=20261031174642';
+import { WATER } from './water-data.js?v=20261031174642';
+import { ROADS } from './road-data.js?v=20261031174642';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -114,7 +114,7 @@ const SHOW = [
   })(),
   balloonSide,
   sideAt('桜田門', [world.castle.sakurada.pos[0], world.castle.sakurada.y + 9, world.castle.sakurada.pos[1]], lab('三宅坂'), lab('祝田橋'), 40, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55 }),
-  sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 34, look: 0.1, up: 2.5, dist: 40, fov: 20, labelUp: 14 }), // 引いた所から望遠で、自転車の奥に二重橋
+  sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 40, look: 0.15, up: 2.5, dist: 60, back: 10, fov: 10, labelUp: 14 }), // 引いた所から強い望遠で、自転車の奥に眼鏡橋
 ].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
 // 見せ場の視線 (カメラ → プレイヤー → 名所) をさえぎる木を取り除く
 world.clearTrees(SHOW.map((o) => {
@@ -1081,7 +1081,7 @@ function render(dt, time) {
       // 横から: 名所と反対側の斜め後ろにカメラを置き、プレイヤー越しに名所を見る
       const away = pl.clone().sub(sc.o.v).setY(0).normalize();
       const fwd = new THREE.Vector3(f.tx, 0, f.tz);
-      const sidePos = pl.clone().addScaledVector(away, sc.o.dist).addScaledVector(fwd, -3).add(new THREE.Vector3(0, sc.o.up, 0));
+      const sidePos = pl.clone().addScaledVector(away, sc.o.dist).addScaledVector(fwd, -(sc.o.back ?? 3)).add(new THREE.Vector3(0, sc.o.up, 0));
       const sideLook = pl.clone().lerp(sc.o.v, sc.o.look).add(new THREE.Vector3(0, 1.5, 0));
       camPos.lerp(sidePos, showW);
       camLook.lerp(sideLook, showW);

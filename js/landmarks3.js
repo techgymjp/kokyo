@@ -1,8 +1,8 @@
 // コースから見える著名な建物 (手作り)。PLATEAU では箱になってしまうので、実際の形と色に近づける
 //   パレスホテル東京 (和田倉門)・パレスサイドビル (竹橋)・国立劇場・最高裁判所 (三宅坂)・法務省 赤れんが棟 (桜田門)
 import * as THREE from '../vendor/three.module.min.js';
-import { ll } from './city.js?v=20261031174031';
-import { hipGeo, canvasTex } from './landmarks.js?v=20261031174031';
+import { ll } from './city.js?v=20261031174642';
+import { hipGeo, canvasTex } from './landmarks.js?v=20261031174642';
 
 // 手作りに置き換える所 (この半径の中の PLATEAU の建物は描かない)
 export const FAMOUS_SITES = [
@@ -177,7 +177,8 @@ export function addFamous(scene, G) {
 }
 
 // ---- 二重橋 (正門石橋): 白い花崗岩の2連アーチの石橋と、欄干の飾り灯。奥に正門鉄橋、その上に伏見櫓 ----
-export function addNijubashi(scene, G, waterLevelAt) {
+// face: 橋を正面 (横腹) から見る位置 [x, z]。皇居前広場から見ると、2つのアーチが並んで見える
+export function addNijubashi(scene, G, waterLevelAt, face) {
   // 位置は国土地理院の地図 (ズーム18) の橋の記号から
   const [AX, AZ] = ll(35.67962, 139.75476); // 石橋の広場側
   const [BX, BZ] = ll(35.67985, 139.75438); // 石橋の正門側
@@ -190,7 +191,10 @@ export function addNijubashi(scene, G, waterLevelAt) {
   const ground = Math.max(G(AX, AZ), G(BX, BZ));
   const deckY = ground + 7.5; // アーチが見える高さ
   g.position.set(cx, 0, cz);
-  g.rotation.y = Math.atan2(BX - AX, BZ - AZ);
+  // 橋の向き: face の方へ横腹 (アーチ) を見せる
+  let ax = BX - AX, az = BZ - AZ;
+  if (face) { const vx = face[0] - (AX + BX) / 2, vz = face[1] - (AZ + BZ) / 2; ax = -vz; az = vx; }
+  g.rotation.y = Math.atan2(ax, az);
   // 暗い灰色の花崗岩 (写真の色)
   const granite = M(0x6e6c68), shade = M(0x5c5a56), iron = M(0x2a3a34), lamp = M(0xfff3cf, { emissive: 0x6a5a30 });
   const H = deckY - lv;
@@ -267,7 +271,10 @@ export function addNijubashi(scene, G, waterLevelAt) {
   scene.add(g);
   // 正門鉄橋 (奥の鉄の橋)
   const t = new THREE.Group();
-  t.position.set(TX, Math.max(G(TX, TZ), deckY) + 4, TZ);
+  // 正門鉄橋は、正面から見て石橋の奥
+  let tx = TX, tz = TZ;
+  if (face) { const vx = cx - face[0], vz = cz - face[1], l = Math.hypot(vx, vz); tx = cx + vx / l * 70 + ax / Math.hypot(ax, az) * 25; tz = cz + vz / l * 70 + az / Math.hypot(ax, az) * 25; }
+  t.position.set(tx, Math.max(G(tx, tz), deckY) + 4, tz);
   t.rotation.y = g.rotation.y;
   const tdeck = new THREE.Mesh(new THREE.BoxGeometry(10, 1.4, 34), M(0x7a7f84));
   t.add(tdeck);
