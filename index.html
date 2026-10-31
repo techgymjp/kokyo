@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>皇居ランナー</title>
+<meta name="description" content="ロードバイクで皇居を一周。実在の東京 (PLATEAU 3D都市モデル・国土地理院の標高) で、ランナーや車をよけながら走り抜けるブラウザ3Dゲーム">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app"></div>
+
+<div id="loading"><div class="logo">皇居ランナー</div><div id="loadMsg">読み込んでいます…</div></div>
+
+<div id="hud" class="hidden">
+  <div id="hTop">
+    <div class="box"><div class="lbl">TIME</div><div id="hTime">0:00.0</div></div>
+    <div class="box wide"><div id="hDist">0.00 / 5.97 km</div><div class="bar"><div id="hBar"></div></div><div id="hNext"></div></div>
+    <div class="box"><div class="lbl">SCORE</div><div id="hScore">0</div></div>
+  </div>
+  <canvas id="minimap" width="170" height="170"></canvas>
+  <div id="hSide"><div>抜いた人 <b id="hPassed">0</b></div><div id="hLane"></div><div id="hGrade"></div><div id="hOni" class="hidden"></div></div>
+  <div id="hSpeedBox"><span id="hSpeed">0</span><small>km/h</small>
+    <div class="stam"><div class="lbl">体力</div><div class="sbar"><div id="hStamina"></div></div></div>
+  </div>
+  <div id="msg"></div>
+  <div id="pops"></div>
+  <div id="count"></div>
+  <button id="pauseBtn" class="icon">❚❚</button>
+  <button id="muteBtn" class="icon">🔊</button>
+  <div id="touch">
+    <div class="left"><button id="tLeft">◀</button><button id="tRight">▶</button></div>
+    <div class="right"><button id="tBrake">ブレーキ</button><button id="tDash">ダッシュ</button></div>
+  </div>
+  <div id="edge"></div>
+  <div id="flashFx"></div>
+</div>
+
+<div id="title" class="panel hidden">
+  <h1>皇居ランナー</h1>
+  <p class="sub">ロードバイクで皇居を一周（約6km）。<br>ランナーや歩行者、車やバイクをよけながら、二重橋前のゴールをめざせ！</p>
+  <p class="route">二重橋前 → 大手門 → 竹橋 → 九段下 → 田安門（武道館）→ 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前</p>
+  <div class="row"><span>ステージ</span><div id="tod" class="seg"><button data-v="morning"></button><button data-v="day"></button><button data-v="dusk"></button><button data-v="night"></button></div></div>
+  <button id="startBtn" class="big">スタート</button>
+  <div id="best"></div>
+  <table class="keys">
+    <tr><th></th><th>パソコン</th><th>スマホ</th></tr>
+    <tr><td>右・左</td><td>← → ／ A D</td><td>◀ ▶</td></tr>
+    <tr><td>ブレーキ</td><td>↓ ／ S</td><td>ブレーキ</td></tr>
+    <tr><td>ダッシュ</td><td>↑ ／ W ／ Space</td><td>ダッシュ</td></tr>
+  </table>
+  <ul class="rules">
+    <li>ステージは 朝 → 昼 → 夕方 → 夜 の順に、人も車も増えて難しくなります。ゴールすると次のステージが開きます</li>
+    <li>ふだんは自動で時速40kmまでこぎます。<b>ダッシュ</b>は体力を使い、ゼロになるとできません（離すと回復）</li>
+    <li>坂は実際の標高どおり。九段坂は上りで遅く、三宅坂の下りは時速80km！</li>
+    <li>歩行者・ランナー・車・バイクにぶつかったらゲームオーバー。2人組・3人組の間はすり抜けられません</li>
+    <li>都道301号（祝田橋〜大手門〜竹橋）は一方通行。左の1車線がランナー、ほかの車線は後ろから車が来ます。ほかの区間は対向車線から車が来ます</li>
+    <li>昼・夕方・夜のステージは、後ろから雲に乗った鬼が追いかけてきます。捕まったらアウト</li>
+    <li>桜田門の手前では、井伊直弼の行列が横断中…？ 隙間をすり抜けろ</li>
+  </ul>
+  <p class="credit">建物: 国土交通省 PLATEAU ／ 標高・水面: 国土地理院 ／ 道路: © OpenStreetMap contributors ／ 街の3Dデータ: <a href="https://github.com/techgymjp/tarzan" target="_blank">ターザン大東京</a></p>
+</div>
+
+<div id="pause" class="panel small hidden">
+  <h2>一時停止</h2>
+  <button id="resumeBtn" class="big">つづける</button>
+  <button id="quitBtn">タイトルへ</button>
+</div>
+
+<div id="result" class="panel small hidden">
+  <h2 id="resTitle"></h2>
+  <div id="resStars"></div>
+  <div id="resTime"></div>
+  <div id="resStats"></div>
+  <div id="resBest"></div>
+  <div id="shareText" class="hidden"></div>
+  <button id="nextBtn" class="big hidden">次のステージへ</button>
+  <button id="retryBtn" class="big">もう一度</button>
+  <button id="shareBtn">シェアする</button>
+  <button id="titleBtn">タイトルへ</button>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
