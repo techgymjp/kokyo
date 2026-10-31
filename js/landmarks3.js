@@ -11,6 +11,10 @@ export const FAMOUS_SITES = [
   [35.68110, 139.74330, 75],  // 国立劇場
   [35.67960, 139.74330, 70],  // 最高裁判所
   [35.67580, 139.75285, 55],  // 法務省 赤れんが棟
+  [35.67973, 139.75457, 45],  // 二重橋 (正門石橋) のまわり
+  [35.68077, 139.75380, 40],  // 正門鉄橋のまわり
+  [35.68530, 139.74560, 70],  // 半蔵門のまわり
+  [35.68528, 139.74505, 40],  // 半蔵門の土橋
 ];
 // 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
 const FAMOUS_LINES = [[35.67976, 139.76524, 35.68296, 139.76684, 70]];
@@ -171,9 +175,10 @@ export function addFamous(scene, G) {
 
 // ---- 二重橋 (正門石橋): 白い花崗岩の2連アーチの石橋と、欄干の飾り灯。奥に正門鉄橋、その上に伏見櫓 ----
 export function addNijubashi(scene, G, waterLevelAt) {
-  const [AX, AZ] = ll(35.67960, 139.75470); // 石橋の広場側
-  const [BX, BZ] = ll(35.68010, 139.75405); // 石橋の正門側
-  const [TX, TZ] = ll(35.68060, 139.75345); // 正門鉄橋
+  // 位置は国土地理院の地図 (ズーム18) の橋の記号から
+  const [AX, AZ] = ll(35.67962, 139.75476); // 石橋の広場側
+  const [BX, BZ] = ll(35.67985, 139.75438); // 石橋の正門側
+  const [TX, TZ] = ll(35.68077, 139.75380); // 正門鉄橋
   const g = new THREE.Group();
   const cx = (AX + BX) / 2, cz = (AZ + BZ) / 2;
   const L = Math.hypot(BX - AX, BZ - AZ);
@@ -291,9 +296,6 @@ export function addOtemon(scene, course, G) {
   for (let z = -30; z <= -2; z += 7) box(g, 20.2, 1.2, 1.4, 24, 12, z, dark); // 窓
   const yr = new THREE.Mesh(hipGeo, roofM);
   yr.scale.set(25, 6.5, 43); yr.position.set(24, 19.2, -16); g.add(yr);
-  const gable = new THREE.Mesh(new THREE.ConeGeometry(6, 4, 3), white);
-  gable.rotation.set(Math.PI / 2, 0, 0); gable.scale.set(1.2, 0.2, 1); gable.position.set(24, 19.5, 5.3);
-  g.add(gable);
   // 渡櫓門の先の石垣 (右へ続く)
   box(g, 30, 6.5, 4, 50, -0.5, 2, stone);
   scene.add(g);

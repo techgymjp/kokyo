@@ -88,18 +88,28 @@ const sideAt = (name, p, a, b, half = 55, opt = {}) => { const c = closestS(p, a
 // 千鳥ヶ淵の見せ場: お濠の上 (道路の左 70m)
 const chidoriView = (() => { const d = lab('千鳥ヶ淵') - 40; const p = course.world(d, course.walkEdge(d) - 70); return [p.x, p.y - 2, p.z]; })();
 const SHOW = [
-  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 5, look: 0.15, fov: 30, labelUp: 26, clear: 15 }),
+  sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 26, up: 14, look: 0.2, fov: 30, labelUp: 26, clear: 15 }),
   sideAt('大手門', [world.castle.otemon.pos[0], world.castle.otemon.y + 8, world.castle.otemon.pos[1]], lab('和田倉門'), lab('竹橋'), 45, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55, labelUp: 16 }),
   sideAt('和気清麻呂像', [world.wake.pos[0], world.wake.y + 10, world.wake.pos[1]], lab('大手門'), lab('竹橋'), 35, { clear: 12, look: 0.25, dist: 9, up: 2.5, fov: 55, labelUp: 6 }),
   sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),
   // 九段坂を上がるところ: 斜め後ろから武道館
-  { name: '日本武道館', mode: 'diag', s0: lab('九段下') + 20, s1: lab('田安門') - 60, p: at(...world.budokan.pos, 30), up: 10, look: 0.4, clear: 22 },
+  { name: '日本武道館', mode: 'diag', s0: lab('九段下') + 110, s1: lab('田安門') - 35, p: at(...world.budokan.pos, 30), up: 9, look: 0.5, clear: 26 },
   sideAt('日本武道館', at(...world.budokan.pos, 30), lab('九段下'), lab('九段坂上'), 60, { dist: 16, up: 4, fov: 50, clear: 30 }), // 田安門の前で横から
   sideAt('千鳥ヶ淵', chidoriView, lab('九段坂上'), lab('千鳥ヶ淵交差点'), 60, { dist: 10, up: 3.5, look: 0.35, fov: 62, labelUp: 14 }),
   // 半蔵門: 近づくところで斜め後ろから (土手の上の門と石垣)
   (() => { const p = [world.castle.hanzo.pos[0], world.castle.hanzo.y + 4, world.castle.hanzo.pos[1]]; const c = closestS(p, lab('千鳥ヶ淵交差点'), lab('国立劇場')); return { name: '半蔵門', mode: 'diag', s0: c - 90, s1: c + 5, p, up: 6, look: 0.45, clear: 18, labelUp: 10 }; })(),
-  sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.3, up: 9, fov: 62, labelUp: 30 }),
-  sideAt('国会議事堂', at(...ll(35.67590, 139.74480), 40), lab('国立劇場'), lab('桜田門'), 70, { clear: 40, look: 0.1, up: 10, dist: 30, fov: 36, labelUp: 34 }),
+  sideAt('テックジムのアドバルーン', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 14, look: 0.35, up: 18, fov: 62, labelUp: 30 }),
+  // 国会議事堂: 正面アングル (議事堂が進行方向のまっすぐ前に来る所で、後ろから議事堂へ目を向けて少し望遠)
+  (() => {
+    const p = at(...ll(35.67590, 139.74480), 40);
+    let best = lab('国立劇場'), bd = -2;
+    for (let d = lab('国立劇場'); d < lab('桜田門'); d += 4) {
+      const f = course.frame(d), dx = p[0] - f.x, dz = p[2] - f.z, l = Math.hypot(dx, dz);
+      const c = (dx * f.tx + dz * f.tz) / l;
+      if (c > bd) { bd = c; best = d; }
+    }
+    return { name: '国会議事堂', mode: 'behind', s0: best - 110, s1: best + 30, p, look: 0.85, fov: 38, up: 1.5, clear: 30, labelUp: 34 };
+  })(),
   { name: '桜田門', mode: 'behind', s0: lab('桜田門') - 120, s1: lab('桜田門') + 30, p: at(...world.gates.sakurada, 14) },
   sideAt('二重橋', world.nijubashi.pos.toArray(), lab('祝田橋'), course.L - 20, 55, { clear: 30, look: 0.35, up: 4, dist: 30, fov: 13, labelUp: 14 }),
 ].map((o) => ({ ...o, v: new THREE.Vector3(...o.p) }));
@@ -949,10 +959,10 @@ function render(dt, time) {
       camLook.lerp(dLook, showW);
     } else {
       const bk = course.world(P.D - 6.5 - 3.5 * showW, P.U * 0.8, F2);
-      camPos.set(bk.x, bk.y + 2.6 - sp * 0.5 + 5 * showW, bk.z);
+      camPos.set(bk.x, bk.y + 2.6 - sp * 0.5 + (sc.o.up ?? 5) * showW, bk.z);
       const toL = sc.o.v.clone().sub(camPos).normalize().multiplyScalar(40).add(camPos);
-      // プレイヤーと名所のあいだを見る (寄せすぎると自分が見えなくなるので半分まで)
-      camLook.lerp(toL.lerp(pl, 0.35), 0.5 * showW);
+      // プレイヤーと名所のあいだを見る (寄せすぎると自分が見えなくなるので、ふつうは半分まで)
+      camLook.lerp(toL.lerp(pl, 0.35), (sc.o.look ?? 0.5) * showW);
     }
     showLabel.position.copy(sc.o.v).add(new THREE.Vector3(0, sc.o.labelUp || 14, 0));
     if (showLabel.userData.name !== sc.o.name) setShowLabel(sc.o.name);
@@ -966,10 +976,12 @@ function render(dt, time) {
   camera.position.lerp(camPos, Math.min(1, dt * (showW > 0.05 ? 3 : 6)));
   if (game.shake > 0) { game.shake -= dt; camera.position.y += (Math.random() - 0.5) * 0.25 * game.shake / 0.3; camera.position.x += (Math.random() - 0.5) * 0.1 * game.shake / 0.3; }
   camera.lookAt(camLook);
+  // 確認用 (?debug のときだけ): dbg.cam = [x, y, z, tx, ty, tz] でカメラを固定
+  if (DEBUG && window.dbg && dbg.cam) { camera.position.set(dbg.cam[0], dbg.cam[1], dbg.cam[2]); camera.lookAt(dbg.cam[3], dbg.cam[4], dbg.cam[5]); }
   let fov = 68 + sp * 18;
   // 横アングルで遠くの名所を写すときは望遠に (画角を狭く)
   const scf = showcase(P.D);
-  if (scf.o && scf.o.mode === 'side' && scf.o.fov) fov += (scf.o.fov - fov) * showW;
+  if (scf.o && scf.o.fov) fov += (scf.o.fov - fov) * showW;
   if (Math.abs(camera.fov - fov) > 0.1) { camera.fov += (fov - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix(); }
   // 雪 (桜田門のあたり)
   const sn = THREE.MathUtils.clamp(1 - (Math.abs(P.D - EVENT_S) - 150) / 250, 0, 1);
