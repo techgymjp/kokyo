@@ -932,10 +932,12 @@ function render(dt, time) {
     o.mesh.visible = Math.abs(o.d - P.D) < 450;
   }
   // カメラ (後ろから)
-  const back = course.world(P.D - 6.5, P.U * 0.8 + (course.leftEdge(P.D) - 1.6) * 0.0, F2);
-  const ahead = course.world(P.D + 12, P.U * 0.9, {});
+  // ふだんのカメラ: プレイヤーが大きく見えるよう、後ろ 4.9m・高さ 2.0m (前の 3/4)
+  const CAM_BACK = 4.9, CAM_UP = 1.95;
+  const back = course.world(P.D - CAM_BACK, P.U * 0.85, F2);
+  const ahead = course.world(P.D + 10, P.U * 0.9, {});
   const sp = Math.min(1, P.v / 22);
-  camPos.set(back.x, back.y + 2.6 - sp * 0.5, back.z);
+  camPos.set(back.x, back.y + CAM_UP - sp * 0.35, back.z);
   camLook.set(ahead.x, ahead.y + 1.0, ahead.z);
   // 見せ場: 後ろからのまま、少し高く・後ろへ引いて、名所の方へ目を寄せる (プレイヤーが画面から出ない範囲で)
   const sc = showcase(P.D);
@@ -968,8 +970,8 @@ function render(dt, time) {
       camPos.lerp(dPos, showW);
       camLook.lerp(dLook, showW);
     } else {
-      const bk = course.world(P.D - 6.5 - 3.5 * showW, P.U * 0.8, F2);
-      camPos.set(bk.x, bk.y + 2.6 - sp * 0.5 + (sc.o.up ?? 5) * showW, bk.z);
+      const bk = course.world(P.D - CAM_BACK - 3.5 * showW, P.U * 0.85, F2);
+      camPos.set(bk.x, bk.y + CAM_UP - sp * 0.35 + (sc.o.up ?? 5) * showW, bk.z);
       const toL = sc.o.v.clone().sub(camPos).normalize().multiplyScalar(40).add(camPos);
       // プレイヤーと名所のあいだを見る (寄せすぎると自分が見えなくなるので、ふつうは半分まで)
       camLook.lerp(toL.lerp(pl, 0.35), (sc.o.look ?? 0.5) * showW);
