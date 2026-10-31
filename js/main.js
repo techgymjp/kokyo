@@ -383,7 +383,6 @@ function splash(x, y, z, dist) {
     splashes.push(m);
   }
   if (dist < 250) { sfx.burst(0.9, 1400, 200, Math.min(0.6, 40 / Math.max(20, dist)), 'lowpass', 0.8); sfx.tone(70, 0.4, 0.25, 'sine', 0.5); }
-  if (dist < 150) popup('ドボン！', 'graze');
 }
 function updateSplashes(dt) {
   for (let i = splashes.length - 1; i >= 0; i--) {
@@ -655,6 +654,18 @@ const mini = (() => {
       ctx.translate(-px, -py);
       ctx.drawImage(c, 0, 0);
       // 車・バイク
+      // ランナー・歩行者 (小さな点。アングルが切り替わっているときも、まわりの様子の見当がつくように)
+      for (const p of game.people) {
+        if (Math.abs(p.d - P.D) > 220) continue;
+        const q = course.world(p.d, p.u, {});
+        ctx.fillStyle = p.kind === 0 ? '#e0533d' : '#555';
+        ctx.fillRect((q.x - x0) * S - 1.5, (q.z - z0) * S - 1.5, 3, 3);
+      }
+      if (game.event) {
+        ctx.fillStyle = '#7a1c1c';
+        for (const m of game.event.members) { const q = course.world(EVENT_S + m.dd, game.event.head + m.off, {}); ctx.fillRect((q.x - x0) * S - 1.5, (q.z - z0) * S - 1.5, 3, 3); }
+      }
+      if (oni.active) { const q = course.world(oni.d, oni.u, {}); ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('👹', (q.x - x0) * S, (q.z - z0) * S); }
       for (const o of game.vehicles) {
         if (o.free) continue;
         const p = course.world(o.d, o.u);
@@ -665,10 +676,9 @@ const mini = (() => {
       // 自分
       ctx.fillStyle = '#1e6bff';
       // 自分 (青い丸): このあたりを走っている、という目印
+      // 中は透明 (まわりの人や車が見えるように)、縁だけの細い丸
       ctx.beginPath(); ctx.arc(W / 2, H / 2 + 30, 11, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(30,107,255,0.35)'; ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = '#1e6bff'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(W / 2, H / 2 + 30, 4, 0, Math.PI * 2); ctx.fillStyle = '#1e6bff'; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = '#1e6bff'; ctx.stroke();
     },
   };
 })();
