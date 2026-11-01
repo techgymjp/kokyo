@@ -75,7 +75,8 @@ export class Sfx {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     const v = Math.min(1, speed / 90);
-    this.windG.gain.setTargetAtTime(v * v * 0.55, t, 0.1);
+    // 風切り音 (サー) は小さめに: BGM が聞こえるように (時速80km で 0.14)
+    this.windG.gain.setTargetAtTime(v * v * 0.18, t, 0.1);
     this.windF.frequency.setTargetAtTime(300 + v * 1400, t, 0.1);
   }
   burst(dur, f0, f1, vol, type = 'bandpass', q = 1) {
@@ -207,6 +208,7 @@ export class Sfx {
 // BGM: 都会を飛び回るアップテンポの曲 (WebAudio で合成。外部音源なし)
 // Am - F - C - G の4小節をくり返す。速く飛ぶほどフィルターが開いてハイハットが細かくなる
 const BPM = 132;
+const BGM_VOL = 0.5; // BGM の音量 (大きめ)
 const CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]]; // Am F C G (MIDI)
 const BASS = [45, 41, 36, 43];
 // メロディー (16分音符の位置 → MIDI)。8小節で1周
@@ -247,7 +249,7 @@ export class Bgm {
     this.setup();
     const ctx = this.sfx.ctx;
     this.bus.gain.cancelScheduledValues(ctx.currentTime);
-    this.bus.gain.setTargetAtTime(0.32, ctx.currentTime, 0.3);
+    this.bus.gain.setTargetAtTime(BGM_VOL, ctx.currentTime, 0.3);
     if (this.on) return;
     this.on = true;
     this.step = 0;
@@ -261,7 +263,7 @@ export class Bgm {
     const ctx = this.sfx.ctx;
     this.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
   }
-  duck(on) { if (this.bus) this.bus.gain.setTargetAtTime(on ? 0.1 : 0.32, this.sfx.ctx.currentTime, 0.2); }
+  duck(on) { if (this.bus) this.bus.gain.setTargetAtTime(on ? 0.15 : BGM_VOL, this.sfx.ctx.currentTime, 0.2); }
   // 0..1 (速さ)
   setEnergy(e) {
     this.energy = e;
