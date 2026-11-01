@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261031195547';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261031195547';
-import { ll } from './city.js?v=20261031195547';
-import { Terrain } from './terrain.js?v=20261031195547';
-import { createWorld } from './world.js?v=20261031195547';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261031195547';
-import { Sfx, Bgm } from './audio.js?v=20261031195547';
-import { Chaser } from './oni.js?v=20261031195547';
-import { Fireworks } from './fireworks.js?v=20261031195547';
-import { WATER } from './water-data.js?v=20261031195547';
-import { ROADS } from './road-data.js?v=20261031195547';
+import { Course, LANE_W } from './course.js?v=20261101052013';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261101052013';
+import { ll } from './city.js?v=20261101052013';
+import { Terrain } from './terrain.js?v=20261101052013';
+import { createWorld } from './world.js?v=20261101052013';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261101052013';
+import { Sfx, Bgm } from './audio.js?v=20261101052013';
+import { Chaser } from './oni.js?v=20261101052013';
+import { Fireworks } from './fireworks.js?v=20261101052013';
+import { WATER } from './water-data.js?v=20261101052013';
+import { ROADS } from './road-data.js?v=20261101052013';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -94,6 +94,7 @@ const chidoriView = (() => { const d = lab('千鳥ヶ淵') - 40; const p = cours
 const balloonSide = sideAt('テックジム東京本校', world.balloonPos, lab('半蔵門') - 100, lab('三宅坂'), 45, { dist: 25, look: 0.07, up: 2, fov: 56, clear: 24, labelUp: 75 }); // 自転車が画面の中ほどに大きく、上にアドバルーン // 引いた所から、自転車とアドバルーンが両方入るように
 const SHOW = [
   sideAt('東京駅 丸の内駅舎', at(...world.tstation.pos, 18), lab('二重橋前'), lab('大手門'), 40, { dist: 60, up: 7, look: 0.1, fov: 16, labelUp: 26, clear: 21 }), // 引いた所から望遠で、自転車と駅舎を重ねる
+  sideAt('和田倉噴水公園', [world.fountain.pos[0], world.fountain.y + 10, world.fountain.pos[1]], lab('二重橋前') + 150, lab('大手門'), 40, { clear: 40, look: 0.12, dist: 45, up: 3, fov: 24 }), // 引いた所から望遠で、自転車の奥に噴水
   sideAt('大手門', [world.castle.otemon.pos[0], world.castle.otemon.y + 8, world.castle.otemon.pos[1]], lab('和田倉門'), lab('竹橋'), 45, { clear: 20, look: 0.25, dist: 12, up: 3.5, fov: 55, labelUp: 16 }),
   sideAt('和気清麻呂像', [world.wake.pos[0], world.wake.y + 10, world.wake.pos[1]], lab('大手門'), lab('竹橋'), 35, { clear: 12, look: 0.25, dist: 9, up: 2.5, fov: 55, labelUp: 6 }),
   sideAt('平川門', at(...world.castle.hirakawa, 10), lab('大手門'), lab('竹橋'), 45, { clear: 18, look: 0.12 }),

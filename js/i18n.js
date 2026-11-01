@@ -73,7 +73,7 @@ const NAMES = {
   '九段下': 'Kudanshita', '田安門': 'Tayasu-mon Gate', '九段坂上': 'Top of Kudan-zaka', '千鳥ヶ淵': 'Chidorigafuchi', '千鳥ヶ淵交差点': 'Chidorigafuchi Crossing',
   '半蔵門': 'Hanzomon Gate', '国立劇場': 'National Theatre', '三宅坂': 'Miyakezaka', '桜田門': 'Sakuradamon Gate', '祝田橋': 'Iwaidabashi',
   '東京駅 丸の内駅舎': 'Tokyo Station Marunouchi Building', '和気清麻呂像': 'Statue of Wake no Kiyomaro', '平川門': 'Hirakawa-mon Gate',
-  '日本武道館': 'Nippon Budokan', '国会議事堂': 'National Diet Building', 'テックジム東京本校': 'TECH GYM Tokyo', '二重橋': 'Nijubashi Bridge',
+  '日本武道館': 'Nippon Budokan', '国会議事堂': 'National Diet Building', 'テックジム東京本校': 'TECH GYM Tokyo', '二重橋': 'Nijubashi Bridge', '和田倉噴水公園': 'Wadakura Fountain Park',
 };
 export const nm = (n) => (LANG === 'en' && NAMES[n]) || n;
 

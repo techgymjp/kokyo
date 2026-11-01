@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261031195547';
-import { CITY } from './city-data.js?v=20261031195547';
-import { ROADS } from './road-data.js?v=20261031195547';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261031195547';
-import { LANE_W, CURB_H } from './course.js?v=20261031195547';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261031195547';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261031195547';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon } from './landmarks3.js?v=20261031195547';
+import { City, ll } from './city.js?v=20261101052013';
+import { CITY } from './city-data.js?v=20261101052013';
+import { ROADS } from './road-data.js?v=20261101052013';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261101052013';
+import { LANE_W, CURB_H } from './course.js?v=20261101052013';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261101052013';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261101052013';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261101052013';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -131,6 +131,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const castle = addCastleGates(scene, course, G);
   castle.otemon = addOtemon(scene, course, G);
   castle.sakurada = addSakuradamon(scene, course, G);
+  const fountain = addWadakuraFountain(scene, course, G);
   const wake = addWakeNoKiyomaro(scene, course, G);
   castle.hanzo = addHanzomon(scene, course, G);
   place(() => addKusunoki(scene, G));
@@ -657,6 +658,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     city.streamTiles(camera.position.x, camera.position.z, DRAW_R, 2);
     techgym.update(time);
     balloon.update(time);
+    fountain.update(time);
     distant.follow(camera);
     fuji.follow(camera);
     sky.position.copy(camera.position);
@@ -669,7 +671,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   // スタート地点のまわりのタイルを先に組み立てる
   function prebuild(x, z) { while (city.streamTiles(x, z, 900, 4) > 0); }
 
-  return { wake, nijubashi, famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
+  return { fountain, wake, nijubashi, famous, castle, clearTrees: (segs) => clearTrees(segs), city, applyTod, update, reflect, prebuild, DRAW_R, budokan, gates, palace, yk, tstation, balloonPos: balloon.pos, waterLevelAt: waterInfo.levelAt };
 }
 
 // コースの道路のメッシュ

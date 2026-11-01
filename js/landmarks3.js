@@ -1,8 +1,8 @@
 // コースから見える著名な建物 (手作り)。PLATEAU では箱になってしまうので、実際の形と色に近づける
 //   パレスホテル東京 (和田倉門)・パレスサイドビル (竹橋)・国立劇場・最高裁判所 (三宅坂)・法務省 赤れんが棟 (桜田門)
 import * as THREE from '../vendor/three.module.min.js';
-import { ll } from './city.js?v=20261031195547';
-import { hipGeo, canvasTex } from './landmarks.js?v=20261031195547';
+import { ll } from './city.js?v=20261101052013';
+import { hipGeo, canvasTex } from './landmarks.js?v=20261101052013';
 
 // 手作りに置き換える所 (この半径の中の PLATEAU の建物は描かない)
 export const FAMOUS_SITES = [
@@ -17,6 +17,7 @@ export const FAMOUS_SITES = [
   [35.68528, 139.74505, 40],  // 半蔵門の土橋
   [35.67770, 139.75250, 45],  // 外桜田門
   [35.69332, 139.74983, 190], // 日本武道館のまわり (両隣の建物を描かない)
+  [35.68338, 139.76090, 50],  // 和田倉噴水公園
   [35.68602, 139.75962, 75],  // 大手門 (PLATEAU の高麗門・渡櫓門・塀は手作りに置き換える)
 ];
 // 手作りの細長い名所 (線分のまわり) : 東京駅 丸の内駅舎 (ターザン大東京の addTokyoStation と同じ位置)
@@ -460,4 +461,52 @@ export function addHanzomon(scene, course, G) {
   r.scale.set(10.5, 3.2, 9); r.position.set(-11, 4.6, -2); g.add(r);
   scene.add(g);
   return { pos: [GX, GZ], y: roadP.y };
+}
+
+// ---- 和田倉噴水公園: 広い水盤に、黒い大きな杯形の噴水が3つ並び、まっすぐ高く噴き上げる。まわりに小さな噴水と石の広場 ----
+export function addWadakuraFountain(scene, course, G) {
+  const [FX, FZ] = ll(35.68338, 139.76090);
+  const n = course.nearest(FX, FZ, 300);
+  const f = course.frame(n.s);
+  const g = new THREE.Group();
+  const y0 = G(FX, FZ);
+  g.position.set(FX, y0, FZ);
+  g.rotation.y = Math.atan2(f.tx, f.tz); // 水盤の長い辺を道路に沿わせる (+z が進む向き)
+  const paving = M(0xd9cfc0), rim = M(0x8c8780), water = M(0x5f93a8, { emissive: 0x1a3440 }), bowlM = M(0x2c2c2e);
+  const jetM = new THREE.MeshLambertMaterial({ color: 0xf4fbff, emissive: 0x6a8090, transparent: true, opacity: 0.8, depthWrite: false });
+  const sprayM = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x506070, transparent: true, opacity: 0.55, depthWrite: false });
+  // 石の広場と水盤
+  box(g, 46, 0.3, 84, 0, 0, 0, paving);
+  box(g, 28, 0.7, 66, 0, 0.1, 0, rim);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 64), water);
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.75; g.add(pool);
+  const jets = [];
+  // 大きな噴水3つ: 黒い杯 (受け皿) と、まっすぐ高い水柱、杯からあふれる水
+  for (const z of [-22, 0, 22]) {
+    const H = z === 0 ? 22 : 18;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 2.2, 12), bowlM); stem.position.set(0, 1.8, z); g.add(stem);
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 1.6, 2.4, 20, 1, true), bowlM); bowl.position.set(0, 3.8, z); bowl.material.side = THREE.DoubleSide; g.add(bowl);
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.7, H, 10, 1, true), jetM); col.position.set(0, 5 + H / 2, z); g.add(col);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 8), sprayM); top.position.set(0, 5 + H, z); g.add(top);
+    const veil = new THREE.Mesh(new THREE.CylinderGeometry(4.3, 5.5, 3.2, 20, 1, true), sprayM); veil.position.set(0, 3.4, z); g.add(veil);
+    jets.push({ col, top, H, z, ph: z * 0.1 });
+  }
+  // 水盤の両わきの小さな噴水
+  const small = [];
+  for (let z = -30; z <= 30; z += 6) for (const x of [-11, 11]) {
+    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.25, 2.4, 6, 1, true), jetM);
+    s.position.set(x, 2, z); g.add(s); small.push(s);
+  }
+  scene.add(g);
+  return {
+    pos: [FX, FZ], y: y0,
+    update(t) {
+      for (const j of jets) {
+        const k = 0.92 + 0.08 * Math.sin(t * 1.7 + j.ph);
+        j.col.scale.y = k; j.col.position.y = 5 + j.H * k / 2;
+        j.top.position.y = 5 + j.H * k; j.top.scale.setScalar(0.9 + 0.25 * Math.sin(t * 3.1 + j.ph));
+      }
+      small.forEach((s, i) => { const k = 0.6 + 0.4 * Math.abs(Math.sin(t * 2 + i * 0.7)); s.scale.y = k; s.position.y = 0.8 + 1.2 * k; });
+    },
+  };
 }
