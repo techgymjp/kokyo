@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261101052454';
-import { CITY } from './city-data.js?v=20261101052454';
-import { ROADS } from './road-data.js?v=20261101052454';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261101052454';
-import { LANE_W, CURB_H } from './course.js?v=20261101052454';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261101052454';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261101052454';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261101052454';
+import { City, ll } from './city.js?v=20261101053239';
+import { CITY } from './city-data.js?v=20261101053239';
+import { ROADS } from './road-data.js?v=20261101053239';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261101053239';
+import { LANE_W, CURB_H } from './course.js?v=20261101053239';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261101053239';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261101053239';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261101053239';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -91,7 +91,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     }
     if (!hit && course.onRoad(bd.cx, bd.cz, 0.5)) hit = true;
     bd.base = base;
-    if (hit) bd.plateau = false;
+    if (hit) { bd.plateau = false; bd.hidden = true; } // 道路にかかる建物は描かず、地面にも塗らない
   }
   hideFamousSites(city);
   city.buildMeshes(scene, mats);
@@ -175,10 +175,17 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     // 道 (幹線道路)
     g.strokeStyle = '#6d6e72';
     g.lineCap = 'round';
+    // コースの道路と重なる所は塗らない (地図の道の線とコースの道路が少しずれて、道路の横に灰色の帯が出ないように)
     for (const r of ROADS) {
       g.lineWidth = r[0] * gsx;
       g.beginPath();
-      for (let i = 1; i + 1 < r.length; i += 2) { const x = gx(r[i] / 2), z = gz(r[i + 1] / 2); if (i > 1) g.lineTo(x, z); else g.moveTo(x, z); }
+      let pen = false;
+      for (let i = 1; i + 1 < r.length; i += 2) {
+        const X = r[i] / 2, Z2 = r[i + 1] / 2;
+        if (course.onRoad(X, Z2, r[0] / 2 + 4)) { pen = false; continue; }
+        const x = gx(X), z = gz(Z2);
+        if (pen) g.lineTo(x, z); else { g.moveTo(x, z); pen = true; }
+      }
       g.stroke();
     }
     // コースの道路の下 (道路のメッシュのすき間から緑が見えないように)
