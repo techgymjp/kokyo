@@ -22,8 +22,11 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+      # 公開するのは Web 版のファイルだけ (www/。Android のプロジェクトなどは入れない)
+      - name: Build web files
+        run: node scripts/build-web.js
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: www
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>皇居ランナー</title>
 <meta name="description" content="ロードバイクで皇居を一周。実在の東京 (PLATEAU 3D都市モデル・国土地理院の標高) で、ランナーや車をよけながら走り抜けるブラウザ3Dゲーム">
-<link rel="stylesheet" href="css/style.css?v=20261101054934">
+<link rel="stylesheet" href="css/style.css?v=20261101061417">
 </head>
 <body>
 <div id="app"></div>
@@ -45,9 +45,22 @@
   <div class="row"><span data-i18n="stage">ステージ</span><div id="tod" class="seg"><button data-v="morning"></button><button data-v="day"></button><button data-v="dusk"></button><button data-v="night"></button></div></div>
   <button id="startBtn" class="big" data-i18n="start">スタート</button>
   <div id="best"></div>
-  <a class="howto" href="howto.html" data-i18n="howto">遊び方</a>
+  <button id="howtoBtn" class="howto" data-i18n="howto">遊び方</button>
   <div class="row"><span data-i18n="lang">言語 / Language</span><div id="langSel" class="seg"><button data-v="ja">日本語</button><button data-v="en">English</button></div></div>
+  <p id="legal" class="credit"><span id="buildInfo"></span> <a id="privacyLink" href="https://techgym.jp/privacy-policy/" target="_blank" rel="noopener" data-i18n="privacy">プライバシーポリシー</a><span id="adPrivacy" hidden> | <a href="#" id="adPrivacyLink" data-i18n="adSettings">広告の設定</a></span></p>
   <p class="credit" data-i18n-html="credit">建物: 国土交通省 PLATEAU ／ 標高・水面: 国土地理院 ／ 道路: © OpenStreetMap contributors ／ 街の3Dデータ: <a href="https://github.com/techgymjp/tarzan" target="_blank">ターザン大東京</a></p>
+</div>
+
+<div id="howto" class="panel howtoPanel hidden">
+  <div id="howtoBody"></div>
+  <button id="howtoPlay" class="big" data-i18n="start">スタート</button>
+  <button id="howtoBack" data-i18n="back">タイトルへ</button>
+</div>
+
+<div id="redo" class="panel small hidden">
+  <button id="redoWatch" class="big"></button>
+  <div id="redoNote"></div>
+  <button id="redoNext"></button>
 </div>
 
 <div id="pause" class="panel small hidden">
@@ -69,6 +82,9 @@
   <button id="titleBtn" data-i18n="toTitle">タイトルへ</button>
 </div>
 
-<script type="module" src="js/main.js?v=20261101054934"></script>
+<script src="build-info.js?v=20261101061417"></script>
+<script src="ads-config.js?v=20261101061417"></script>
+<script src="js/ads.js?v=20261101061417"></script>
+<script type="module" src="js/main.js?v=20261101061417"></script>
 </body>
 </html>

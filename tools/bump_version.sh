@@ -4,5 +4,5 @@
 V=$(date +%Y%m%d%H%M%S)
 cd "$(dirname "$0")/.."
 sed -i -E "s#(from '\./[a-z0-9-]+\.js)(\?v=[0-9]+)?'#\1?v=$V'#g; s#(from '\.\./vendor/three\.module\.min\.js)(\?v=[0-9]+)?'#\1'#g" js/*.js
-sed -i -E "s#src=\"js/main\.js(\?v=[0-9]+)?\"#src=\"js/main.js?v=$V\"#; s#href=\"css/style\.css(\?v=[0-9]+)?\"#href=\"css/style.css?v=$V\"#" index.html howto.html
+sed -i -E "s#src=\"(js/main\.js|js/ads\.js|build-info\.js|ads-config\.js)(\?v=[0-9]+)?\"#src=\"\1?v=$V\"#g; s#href=\"css/style\.css(\?v=[0-9]+)?\"#href=\"css/style.css?v=$V\"#" index.html howto.html
 echo "version $V"

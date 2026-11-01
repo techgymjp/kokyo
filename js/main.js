@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261101054934';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261101054934';
-import { ll } from './city.js?v=20261101054934';
-import { Terrain } from './terrain.js?v=20261101054934';
-import { createWorld } from './world.js?v=20261101054934';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261101054934';
-import { Sfx, Bgm } from './audio.js?v=20261101054934';
-import { Chaser } from './oni.js?v=20261101054934';
-import { Fireworks } from './fireworks.js?v=20261101054934';
-import { WATER } from './water-data.js?v=20261101054934';
-import { ROADS } from './road-data.js?v=20261101054934';
+import { Course, LANE_W } from './course.js?v=20261101061417';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261101061417';
+import { ll } from './city.js?v=20261101061417';
+import { Terrain } from './terrain.js?v=20261101061417';
+import { createWorld } from './world.js?v=20261101061417';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261101061417';
+import { Sfx, Bgm } from './audio.js?v=20261101061417';
+import { Chaser } from './oni.js?v=20261101061417';
+import { Fireworks } from './fireworks.js?v=20261101061417';
+import { WATER } from './water-data.js?v=20261101061417';
+import { ROADS } from './road-data.js?v=20261101061417';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -466,13 +466,139 @@ function togglePause() {
   if (game.state === 'play' || game.state === 'countdown') { game.prevState = game.state; game.state = 'pause'; $('pause').classList.remove('hidden'); bgm.stop(); }
   else if (game.state === 'pause') { game.state = game.prevState; $('pause').classList.add('hidden'); if (!sfx.muted) bgm.start(); }
 }
-$('startBtn').onclick = () => startGame();
-$('retryBtn').onclick = () => startGame();
-$('titleBtn').onclick = () => toTitle();
+// ---------- アプリ (Android) ----------
+// Capacitor で動いているか。Web 版では Capacitor がないので何もしない
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const plugin = (name) => (NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins[name] : null);
+const Ads = window.Ads || { available: false, canReward: false, showing: false, privacyOptionsRequired: false, initDone: Promise.resolve(), showInterstitial: async () => {}, showRewarded: async () => 'unavailable', setBanner() {}, showPrivacyOptions: async () => {} };
+// 広告を出している間は音を止める
+window.AdsAudio = { suspend() { try { if (sfx.ctx) sfx.ctx.suspend(); } catch (e) { /* なし */ } }, resume() { try { if (sfx.ctx) sfx.ctx.resume(); } catch (e) { /* なし */ } } };
+// 全画面広告: 「プレイを始める」「タイトルへ戻る」「ポーズからの再開」「もう一度 / 次のステージ」のたびに出してから進む
+let adBusy = false;
+async function withInterstitial(next) {
+  if (adBusy) return;
+  if (Ads.available) {
+    adBusy = true;
+    await Ads.showInterstitial(3000);
+    adBusy = false;
+  }
+  next();
+}
+const play = () => withInterstitial(() => { $('howto').classList.add('hidden'); startGame(); });
+$('startBtn').onclick = play;
+$('howtoPlay').onclick = play;
+$('retryBtn').onclick = () => withInterstitial(() => startGame());
+$('titleBtn').onclick = () => withInterstitial(() => toTitle());
 $('pauseBtn').onclick = () => togglePause();
-$('resumeBtn').onclick = () => togglePause();
-$('quitBtn').onclick = () => { $('pause').classList.add('hidden'); toTitle(); };
+$('resumeBtn').onclick = () => withInterstitial(() => { if (game.state === 'pause') togglePause(); });
+$('quitBtn').onclick = () => withInterstitial(() => { $('pause').classList.add('hidden'); toTitle(); });
 $('muteBtn').onclick = () => toggleMute();
+// 遊び方 (タイトル画面の上に開く。中身は howto.html の今の言語の部分)
+let howtoLoaded = false;
+$('howtoBtn').onclick = async () => {
+  if (!howtoLoaded) {
+    try {
+      const html = await (await fetch('howto.html')).text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const main = doc.querySelector(`main[data-lang="${LANG}"]`) || doc.querySelector('main');
+      $('howtoBody').innerHTML = main.innerHTML;
+      howtoLoaded = true;
+    } catch (e) { location.href = 'howto.html'; return; }
+  }
+  $('title').classList.add('hidden');
+  $('howto').classList.remove('hidden');
+  $('howto').scrollTop = 0;
+};
+$('howtoBack').onclick = () => withInterstitial(() => { $('howto').classList.add('hidden'); $('title').classList.remove('hidden'); });
+// Android の戻るボタン: プレイ中はポーズ (ポーズ中なら再開)、遊び方ではタイトルへ、タイトル・結果画面ではアプリを閉じる
+if (plugin('App')) {
+  plugin('App').addListener('backButton', () => {
+    if (!$('howto').classList.contains('hidden')) $('howtoBack').onclick();
+    else if (!$('redo').classList.contains('hidden')) closeRedo(true);
+    else if (game.state === 'title' || game.state === 'result') plugin('App').exitApp();
+    else if (game.state === 'pause') $('resumeBtn').onclick();
+    else if (game.state === 'play' || game.state === 'countdown') togglePause();
+  });
+}
+// 裏に回ったら一時停止して音を止める (広告の表示中は広告側が音を止めている)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (game.state === 'play' || game.state === 'countdown') togglePause();
+    window.AdsAudio.suspend();
+  } else if (!Ads.showing) window.AdsAudio.resume();
+});
+// バナー: タイトル・遊び方・ポーズ・結果画面だけ (プレイ中は操作ボタンと重なるので出さない)
+function updateBanner() {
+  const menu = game.state === 'title' || game.state === 'pause' || (game.state === 'result' && !$('result').classList.contains('hidden'));
+  Ads.setBanner(menu && $('redo').classList.contains('hidden'));
+}
+// タイトル画面の下: バージョン (アプリ版)・プライバシーポリシー・広告の設定 (EU など)
+if (window.APP_VERSION && window.APP_VERSION !== 'dev') $('buildInfo').textContent = window.APP_VERSION;
+$('privacyLink').href = t('privacyUrl');
+Ads.initDone.then(() => { if (Ads.privacyOptionsRequired) $('adPrivacy').hidden = false; });
+$('adPrivacyLink').onclick = (e) => { e.preventDefault(); Ads.showPrivacyOptions(); };
+
+// ---------- リワード広告のチート: ぶつかったら、広告を見て少し前から続きを走る (アプリのみ・1 ゲーム 3 回まで) ----------
+// 一番悔しい失敗 (ゴールの手前でぶつかる) を取り返せるように。ぶつかった様子を見届けられるよう、少し待ってから案内を出す
+const REDO_DELAY = 2.2, REDO_WAIT = 6, REDO_MAX = 3;
+const redo = { active: false, busy: false, t: 0, timer: null };
+function offerRedo() {
+  redo.timer = setTimeout(() => {
+    Object.assign(redo, { active: true, busy: false, t: REDO_WAIT });
+    $('redoWatch').disabled = false;
+    $('redoWatch').textContent = t('redoWatch');
+    $('redoNote').textContent = t('redoNote', { n: REDO_MAX - game.redoUsed });
+    $('redoNext').textContent = t('redoNext', { s: REDO_WAIT });
+    $('redo').classList.remove('hidden');
+  }, REDO_DELAY * 1000);
+}
+function closeRedo(toResult) {
+  clearTimeout(redo.timer);
+  redo.active = false;
+  $('redo').classList.add('hidden');
+  if (toResult && game.state === 'crash') finish(false);
+}
+function updateRedo(dt) {
+  if (!redo.active || redo.busy) return;
+  redo.t -= dt;
+  $('redoNext').textContent = t('redoNext', { s: Math.max(0, Math.ceil(redo.t)) });
+  if (redo.t <= 0) closeRedo(true);
+}
+$('redoNext').onclick = () => closeRedo(true);
+$('redoWatch').onclick = async () => {
+  if (!redo.active || redo.busy) return;
+  redo.busy = true;
+  $('redoWatch').disabled = true;
+  $('redoWatch').textContent = t('redoLoading');
+  const result = await Ads.showRewarded();
+  if (result === 'unavailable') { $('redoNote').textContent = t('redoFail'); setTimeout(() => closeRedo(true), 2000); return; }
+  if (result !== 'rewarded') { closeRedo(true); return; }
+  closeRedo(false);
+  resumeFromSnap();
+};
+// 1 秒ごとの状態を覚えておき、やり直しでは約 3 秒前から再開する (その間の成績は取り消し)
+const snaps = [];
+function saveSnap() {
+  snaps.push({ D: P.D, U: P.U, v: P.v, stamina: P.stamina, t: game.t, score: game.score, passed: game.passed, nearMiss: game.nearMiss, grazes: game.grazes, oniD: oni.d });
+  if (snaps.length > 6) snaps.shift();
+}
+function resumeFromSnap() {
+  const sn = snaps.length > 3 ? snaps[snaps.length - 4] : snaps[0];
+  if (sn) {
+    Object.assign(P, { D: sn.D, U: sn.U, v: Math.min(sn.v, V_CRUISE), stamina: sn.stamina, lat: 0, dashLock: false });
+    Object.assign(game, { t: sn.t, score: sn.score, passed: sn.passed, nearMiss: sn.nearMiss, grazes: sn.grazes });
+    oni.d = Math.min(sn.oniD, P.D - 120);
+  }
+  // 再開する所のまわりは空けておく (すぐまたぶつからないように)
+  game.people = game.people.filter((p) => p.d < P.D - 3 || p.d > P.D + 45);
+  for (const o of game.vehicles) if (Math.abs(o.d - P.D) < 60) scene.remove(o.mesh);
+  game.vehicles = game.vehicles.filter((o) => Math.abs(o.d - P.D) >= 60);
+  snaps.length = 0;
+  game.redoUsed++;
+  game.state = 'countdown'; game.countdown = 2.2;
+  bike.group.rotation.set(0, 0, 0);
+  if (!sfx.muted) bgm.start();
+}
 document.querySelectorAll('#tod button').forEach((b) => { b.onclick = () => setTod(b.dataset.v); });
 document.querySelectorAll('#langSel button').forEach((b) => {
   b.classList.toggle('on', b.dataset.v === LANG);
@@ -482,6 +608,7 @@ $('nextBtn').onclick = () => { const i = STAGES.indexOf(tod); if (i < unlocked) 
 $('shareBtn').onclick = () => {
   const text = $('shareText').textContent;
   const url = location.href.split('?')[0];
+  if (plugin('Share')) { plugin('Share').share({ text, url: 'https://techgymjp.github.io/kokyo/' }).catch(() => {}); return; }
   if (navigator.share) navigator.share({ text, url }).catch(() => {});
   else open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
 };
@@ -526,7 +653,8 @@ function startGame() {
   clearActors();
   seed = (Date.now() % 100000) + 1;
   resetPlayer();
-  Object.assign(game, { state: 'countdown', countdown: 3.2, t: 0, grazes: 0, score: 0, passed: 0, nearMiss: 0, maxSpeed: 0, lastLabel: null, crashT: 0, eventDone: false, finishT: 0 });
+  snaps.length = 0;
+  Object.assign(game, { redoUsed: 0, state: 'countdown', countdown: 3.2, t: 0, grazes: 0, score: 0, passed: 0, nearMiss: 0, maxSpeed: 0, lastLabel: null, crashT: 0, eventDone: false, finishT: 0 });
   game.frontier = P.D - 40;
   fillPeople(P.D + 360);
   initTraffic();
@@ -563,6 +691,7 @@ function finish(ok) {
   $('resStars').textContent = ok ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('resTime').textContent = ok ? fmtTime(game.t) : t('resWhere', { km: (dist / 1000).toFixed(2), p: nm(course.labelAt(dist)?.name || '') });
   $('resStats').innerHTML = t('resStats', { score, passed: game.passed, near: game.nearMiss, graze: game.grazes || 0, max: Math.round(kmh(game.maxSpeed)) });
+  if (game.redoUsed) $('resStats').innerHTML += t('redoCount', { n: game.redoUsed });
   let best = store.get('best.' + tod, null), isBest = false;
   if (ok && (!best || game.t < best.time)) { best = { time: game.t, score }; store.set('best.' + tod, best); isBest = true; }
   $('resBest').textContent = isBest ? t('newBest') : best ? t('bestShort', { t: fmtTime(best.time) }) : '';
@@ -578,6 +707,7 @@ function finish(ok) {
   $('shareText').textContent = ok
     ? t('shareOk', { t: fmtTime(game.t), s: t('tod_' + tod), stars: '★'.repeat(stars), score })
     : t('shareNg', { km: (dist / 1000).toFixed(2), why: game.crashBy, s: t('tod_' + tod) });
+  if (game.redoUsed) $('shareText').textContent += t('redoShare', { n: game.redoUsed });
   setTimeout(() => $('result').classList.remove('hidden'), ok ? 4200 : 1400);
 }
 
@@ -601,7 +731,8 @@ function crash(by) {
   game.crashT = 0;
   sfx.crash();
   flash(by, 2, 'warn');
-  setTimeout(() => finish(false), 300);
+  if (Ads.canReward && game.redoUsed < REDO_MAX && P.D > 30) offerRedo();
+  else setTimeout(() => finish(false), 300);
 }
 
 // ---------- ミニマップ (お濠とコース。進行方向が上) ----------
@@ -698,6 +829,8 @@ const F = {}, F2 = {};
 function step(dt) {
   const D = DIFF[tod];
   const playing = game.state === 'play';
+  updateRedo(dt);
+  if (playing) { game.snapT = (game.snapT || 0) - dt; if (game.snapT <= 0) { game.snapT = 1; saveSnap(); } }
   if (game.state === 'countdown') {
     const before = Math.ceil(game.countdown);
     game.countdown -= dt;
@@ -1153,6 +1286,7 @@ function render(dt, time) {
 }
 
 function updateHud() {
+  updateBanner();
   if (game.state === 'title') return;
   $('hTime').textContent = fmtTime(game.t);
   $('hSpeed').textContent = Math.round(kmh(P.v));

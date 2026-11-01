@@ -143,3 +143,14 @@ body.inset #showName { top: max(10px, calc(env(safe-area-inset-top) + 8px)) !imp
   #hSide, body.touch #hSide { top: calc(max(8px, env(safe-area-inset-top)) + 198px); }
 }
 .stam .lbl { white-space: nowrap; }
+/* 遊び方 (タイトル画面から開く) */
+.panel.howtoPanel { width: min(760px, calc(100vw - 24px)); text-align: left; }
+.howtoPanel h1 { font-size: 26px; text-align: center; }
+.howtoPanel h2 { color: #ffd36b; font-size: 18px; margin: 14px 0 4px; }
+.howtoPanel .back { display: none; }
+.howtoPanel button { display: block; margin-left: auto !important; margin-right: auto !important; }
+button.howto { background: transparent; }
+#legal { margin-top: 8px; }
+#legal a { color: #9cd0ff; }
+#redo { z-index: 30; }
+#redoNote { margin: 6px 0; font-size: 14px; opacity: 0.9; }
