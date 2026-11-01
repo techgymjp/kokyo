@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261101054312';
-import { CITY } from './city-data.js?v=20261101054312';
-import { ROADS } from './road-data.js?v=20261101054312';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261101054312';
-import { LANE_W, CURB_H } from './course.js?v=20261101054312';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261101054312';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261101054312';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261101054312';
+import { City, ll } from './city.js?v=20261101054934';
+import { CITY } from './city-data.js?v=20261101054934';
+import { ROADS } from './road-data.js?v=20261101054934';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261101054934';
+import { LANE_W, CURB_H } from './course.js?v=20261101054934';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261101054934';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261101054934';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261101054934';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -716,12 +716,12 @@ function buildCourseRoad(scene, course) {
         band(s, s1, wa + (la - wa) * t0, wa + (la - wa) * t1, wb + (lb - wb) * t0, wb + (lb - wb) * t1, CURB_H, tone);
       }
     } else band(s, s1, wa, la, wb, lb, CURB_H, C.walk);
-    wall(s, s1, la, lb, -0.2, CURB_H, C.curb);
+    wall(s, s1, la, lb, -0.6, CURB_H, C.curb);
     // ランナーに開放した車線 / 対向車線
     band(s, s1, la, 0, lb, 0, 0, C.runner);
     band(s, s1, 0, ra, 0, rb, 0, C.onc);
     // 右の歩道
-    wall(s, s1, rb, ra, -0.2, CURB_H, C.curb);
+    wall(s, s1, rb, ra, -0.6, CURB_H, C.curb);
     band(s, s1, ra, ra + 3.5, rb, rb + 3.5, CURB_H, C.rwalk);
     // 白線: 外側の線、車線の境目 (破線)、中央線 (黄色の2本線)
     const dash = Math.floor(s / 4) % 3 !== 0;
@@ -751,8 +751,8 @@ function buildCourseRoad(scene, course) {
     scene.add(m);
     return m;
   };
-  const road = mk(pos, col, { polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
-  const marks = mk(mpos, mcol, { polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
+  const road = mk(pos, col, { polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -12 });
+  const marks = mk(mpos, mcol, { polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -24 });
   // 柵の柱
   const posts = [];
   for (let s = 0; s < course.L; s += 2.5) posts.push(course.world(s, course.walkEdge(s) - 0.25));

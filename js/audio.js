@@ -210,7 +210,7 @@ export class Sfx {
 // BGM: 都会を飛び回るアップテンポの曲 (WebAudio で合成。外部音源なし)
 // Am - F - C - G の4小節をくり返す。速く飛ぶほどフィルターが開いてハイハットが細かくなる
 const BPM = 132;
-const BGM_VOL = 1.0; // BGM の音量 (大きめ)
+const BGM_VOL = 0.8; // BGM の音量 (大きめ)
 const CHORDS = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]]; // Am F C G (MIDI)
 const BASS = [45, 41, 36, 43];
 // メロディー (16分音符の位置 → MIDI)。8小節で1周
