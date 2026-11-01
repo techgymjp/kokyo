@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261101053239';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261101053239';
-import { ll } from './city.js?v=20261101053239';
-import { Terrain } from './terrain.js?v=20261101053239';
-import { createWorld } from './world.js?v=20261101053239';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261101053239';
-import { Sfx, Bgm } from './audio.js?v=20261101053239';
-import { Chaser } from './oni.js?v=20261101053239';
-import { Fireworks } from './fireworks.js?v=20261101053239';
-import { WATER } from './water-data.js?v=20261101053239';
-import { ROADS } from './road-data.js?v=20261101053239';
+import { Course, LANE_W } from './course.js?v=20261101054312';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261101054312';
+import { ll } from './city.js?v=20261101054312';
+import { Terrain } from './terrain.js?v=20261101054312';
+import { createWorld } from './world.js?v=20261101054312';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261101054312';
+import { Sfx, Bgm } from './audio.js?v=20261101054312';
+import { Chaser } from './oni.js?v=20261101054312';
+import { Fireworks } from './fireworks.js?v=20261101054312';
+import { WATER } from './water-data.js?v=20261101054312';
+import { ROADS } from './road-data.js?v=20261101054312';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;

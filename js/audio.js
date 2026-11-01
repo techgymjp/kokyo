@@ -76,7 +76,9 @@ export class Sfx {
     const t = this.ctx.currentTime;
     const v = Math.min(1, speed / 90);
     // 風切り音 (サー) は小さめに: BGM が聞こえるように (時速80km で 0.07)
-    this.windG.gain.setTargetAtTime(v * v * 0.09, t, 0.1);
+    // 時速40kmまでは今の小ささのまま、そこから上げて、時速80kmで最初の大きさ (0.55 × (80/90)² ≈ 0.435) に
+    const hi = Math.max(0, Math.min(1, (speed - 40) / 40));
+    this.windG.gain.setTargetAtTime(v * v * 0.09 + hi * hi * 0.364, t, 0.1);
     this.windF.frequency.setTargetAtTime(300 + v * 1400, t, 0.1);
   }
   burst(dur, f0, f1, vol, type = 'bandpass', q = 1) {
