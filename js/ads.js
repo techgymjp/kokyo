@@ -12,7 +12,7 @@ window.Ads = (() => {
       },
       // 本番の広告ユニット(AdMob の「皇居ランナー」Android)。AdMob で作ったら入れる。空の種類は本番ビルドでは出さない
       production: {
-        interstitial: '',
+        interstitial: 'ca-app-pub-6411535997477460/4298344714',
         rewarded: '',
         banner: 'ca-app-pub-6411535997477460/6924508055',
       },
