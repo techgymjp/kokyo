@@ -1,6 +1,6 @@
 // PLATEAU では箱になってしまう (または首都高グランプリで手作りモデルに置き換えて除いた) 名所を手作りする
 import * as THREE from '../vendor/three.module.min.js';
-import { ll } from './city.js?v=20261101061417';
+import { ll } from './city.js?v=20261102102832';
 
 function latticeTexture() {
   const c = document.createElement('canvas');
