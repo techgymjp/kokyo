@@ -154,3 +154,17 @@ button.howto { background: transparent; }
 #legal a { color: #9cd0ff; }
 #redo { z-index: 30; }
 #redoNote { margin: 6px 0; font-size: 14px; opacity: 0.9; }
+/* アプリでバナー広告が出ているとき: パネルを広告 (下 50px) の上に収める */
+body.banner .panel { top: calc(50% - 30px); max-height: calc(100vh - 76px); }
+/* 横画面のスマホ (高さが低い): 結果画面を詰める */
+@media (max-height: 500px) and (orientation: landscape) {
+  #result h2 { font-size: 20px; margin: 0 0 4px; }
+  #resStars { font-size: 22px; }
+  #resTime { font-size: 18px; margin: 2px 0; }
+  #resStats { font-size: 13px; line-height: 1.5; }
+  #resBest { font-size: 13px; margin: 2px 0; }
+  #result.panel { padding: 10px 16px; width: min(560px, calc(100vw - 24px)); }
+  #result button.big { margin: 8px auto 4px; padding: 8px 40px; font-size: 18px; }
+  #result button:not(.big) { margin: 4px 3px; padding: 6px 14px; }
+  #pause.panel { padding: 12px 16px; }
+}

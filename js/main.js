@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261102104849';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102104849';
-import { ll } from './city.js?v=20261102104849';
-import { Terrain } from './terrain.js?v=20261102104849';
-import { createWorld } from './world.js?v=20261102104849';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102104849';
-import { Sfx, Bgm } from './audio.js?v=20261102104849';
-import { Chaser } from './oni.js?v=20261102104849';
-import { Fireworks } from './fireworks.js?v=20261102104849';
-import { WATER } from './water-data.js?v=20261102104849';
-import { ROADS } from './road-data.js?v=20261102104849';
+import { Course, LANE_W } from './course.js?v=20261102105443';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102105443';
+import { ll } from './city.js?v=20261102105443';
+import { Terrain } from './terrain.js?v=20261102105443';
+import { createWorld } from './world.js?v=20261102105443';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102105443';
+import { Sfx, Bgm } from './audio.js?v=20261102105443';
+import { Chaser } from './oni.js?v=20261102105443';
+import { Fireworks } from './fireworks.js?v=20261102105443';
+import { WATER } from './water-data.js?v=20261102105443';
+import { ROADS } from './road-data.js?v=20261102105443';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -531,7 +531,10 @@ document.addEventListener('visibilitychange', () => {
 // バナー: タイトル・遊び方・ポーズ・結果画面だけ (プレイ中は操作ボタンと重なるので出さない)
 function updateBanner() {
   const menu = game.state === 'title' || game.state === 'pause' || (game.state === 'result' && !$('result').classList.contains('hidden'));
-  Ads.setBanner(menu && $('redo').classList.contains('hidden'));
+  const want = menu && $('redo').classList.contains('hidden');
+  Ads.setBanner(want);
+  // バナー (画面の下、高さ 50) が出ているときは、パネルを上に寄せてボタンが隠れないように
+  document.body.classList.toggle('banner', want && Ads.available);
 }
 // タイトル画面の下: バージョン (アプリ版)・プライバシーポリシー・広告の設定 (EU など)
 if (window.APP_VERSION && window.APP_VERSION !== 'dev') $('buildInfo').textContent = window.APP_VERSION;
