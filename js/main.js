@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261102103826';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102103826';
-import { ll } from './city.js?v=20261102103826';
-import { Terrain } from './terrain.js?v=20261102103826';
-import { createWorld } from './world.js?v=20261102103826';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102103826';
-import { Sfx, Bgm } from './audio.js?v=20261102103826';
-import { Chaser } from './oni.js?v=20261102103826';
-import { Fireworks } from './fireworks.js?v=20261102103826';
-import { WATER } from './water-data.js?v=20261102103826';
-import { ROADS } from './road-data.js?v=20261102103826';
+import { Course, LANE_W } from './course.js?v=20261102104849';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102104849';
+import { ll } from './city.js?v=20261102104849';
+import { Terrain } from './terrain.js?v=20261102104849';
+import { createWorld } from './world.js?v=20261102104849';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102104849';
+import { Sfx, Bgm } from './audio.js?v=20261102104849';
+import { Chaser } from './oni.js?v=20261102104849';
+import { Fireworks } from './fireworks.js?v=20261102104849';
+import { WATER } from './water-data.js?v=20261102104849';
+import { ROADS } from './road-data.js?v=20261102104849';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -1208,7 +1208,8 @@ function render(dt, time) {
   }
   // カメラ (後ろから)
   // ふだんのカメラ: プレイヤーが大きく見えるよう、後ろ 4.9m・高さ 2.0m (前の 3/4)
-  const CAM_BACK = 4.9, CAM_UP = 1.95;
+  // スマホは画面が小さいので、さらに寄せて自転車を大きく (後ろ 3.7m・高さ 1.65m)
+  const CAM_BACK = isTouch ? 3.7 : 4.9, CAM_UP = isTouch ? 1.65 : 1.95;
   const back = course.world(P.D - CAM_BACK, P.U * 0.85, F2);
   const ahead = course.world(P.D + 10, P.U * 0.9, {});
   const sp = Math.min(1, P.v / 22);
@@ -1262,7 +1263,7 @@ function render(dt, time) {
   camera.lookAt(camLook);
   // 確認用 (?debug のときだけ): dbg.cam = [x, y, z, tx, ty, tz] でカメラを固定
   if (DEBUG && window.dbg && dbg.cam) { camera.position.set(dbg.cam[0], dbg.cam[1], dbg.cam[2]); camera.lookAt(dbg.cam[3], dbg.cam[4], dbg.cam[5]); }
-  let fov = 68 + sp * 18;
+  let fov = isTouch ? 62 + sp * 12 : 68 + sp * 18; // スマホは画角を狭めて自転車を大きく
   // 横アングルで遠くの名所を写すときは望遠に (画角を狭く)
   const scf = showcase(P.D);
   if (scf.o && scf.o.fov && scf.o.mode !== 'front') fov += (scf.o.fov - fov) * showW;
