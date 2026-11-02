@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261102102949';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102102949';
-import { ll } from './city.js?v=20261102102949';
-import { Terrain } from './terrain.js?v=20261102102949';
-import { createWorld } from './world.js?v=20261102102949';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102102949';
-import { Sfx, Bgm } from './audio.js?v=20261102102949';
-import { Chaser } from './oni.js?v=20261102102949';
-import { Fireworks } from './fireworks.js?v=20261102102949';
-import { WATER } from './water-data.js?v=20261102102949';
-import { ROADS } from './road-data.js?v=20261102102949';
+import { Course, LANE_W } from './course.js?v=20261102103826';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102103826';
+import { ll } from './city.js?v=20261102103826';
+import { Terrain } from './terrain.js?v=20261102103826';
+import { createWorld } from './world.js?v=20261102103826';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102103826';
+import { Sfx, Bgm } from './audio.js?v=20261102103826';
+import { Chaser } from './oni.js?v=20261102103826';
+import { Fireworks } from './fireworks.js?v=20261102103826';
+import { WATER } from './water-data.js?v=20261102103826';
+import { ROADS } from './road-data.js?v=20261102103826';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -49,7 +49,8 @@ const DIFF = {
 
 // ---------- 描画の準備 ----------
 const renderer = new THREE.WebGLRenderer({ antialias: !isTouch, powerPreference: 'high-performance', stencil: true });
-let pixelRatio = Math.min(devicePixelRatio, isTouch ? 1.5 : 2);
+// スマホは描く解像度を下げる (重いときは下のループでさらに下げる)
+let pixelRatio = Math.min(devicePixelRatio, isTouch ? 1.0 : 2);
 renderer.setPixelRatio(pixelRatio);
 renderer.setSize(innerWidth, innerHeight);
 $('app').appendChild(renderer.domElement);
@@ -1168,7 +1169,7 @@ function render(dt, time) {
   // 人
   crowdList.length = 0;
   for (const p of game.people) {
-    if (p.d > P.D + 330 || p.d < P.D - 40) continue;
+    if (p.d > P.D + (isTouch ? 200 : 330) || p.d < P.D - 40) continue;
     const w = course.world(p.d, p.u, F2);
     crowdList.push({ x: w.x, y: w.y, z: w.z, yaw: w.yaw, phase: p.phase, amp: p.v > 0 ? p.amp : 0, kind: p.hikyaku ? 3 : p.kind, c: p.c, stand: p.stand, lean: p.lean, hikyaku: p.hikyaku });
   }
@@ -1203,7 +1204,7 @@ function render(dt, time) {
     const w = course.world(o.d, o.u, F2);
     o.mesh.position.set(w.x, w.y, w.z);
     o.mesh.rotation.set(0, w.yaw + (o.dir < 0 ? Math.PI : 0), 0);
-    o.mesh.visible = Math.abs(o.d - P.D) < 450;
+    o.mesh.visible = Math.abs(o.d - P.D) < (isTouch ? 260 : 450);
   }
   // カメラ (後ろから)
   // ふだんのカメラ: プレイヤーが大きく見えるよう、後ろ 4.9m・高さ 2.0m (前の 3/4)
@@ -1338,7 +1339,7 @@ function loop() {
   fpsT += dt; fpsN++;
   if (fpsT > 2) {
     const fps = fpsN / fpsT;
-    if (fps < 40 && pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.25); renderer.setPixelRatio(pixelRatio); }
+    if (fps < 40 && pixelRatio > 0.6) { pixelRatio = Math.max(0.6, pixelRatio - 0.15); renderer.setPixelRatio(pixelRatio); }
     fpsT = 0; fpsN = 0;
   }
 }

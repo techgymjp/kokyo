@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261102102949';
-import { CITY } from './city-data.js?v=20261102102949';
-import { ROADS } from './road-data.js?v=20261102102949';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261102102949';
-import { LANE_W, CURB_H } from './course.js?v=20261102102949';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261102102949';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261102102949';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261102102949';
+import { City, ll } from './city.js?v=20261102103826';
+import { CITY } from './city-data.js?v=20261102103826';
+import { ROADS } from './road-data.js?v=20261102103826';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261102103826';
+import { LANE_W, CURB_H } from './course.js?v=20261102103826';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261102103826';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261102103826';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261102103826';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -20,7 +20,8 @@ export const TOD_NAMES = { morning: '朝', day: '昼', dusk: '夕方', night: '�
 
 export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const G = (x, z) => terrain.at(x, z);
-  const DRAW_R = isTouch ? 1500 : 2200;
+  // 描く範囲: スマホは狭く (軽くするため。もやで遠くを隠す)
+  const DRAW_R = isTouch ? 1100 : 2200;
   scene.fog = new THREE.Fog(0xbfd2e6, 300, DRAW_R);
   const hemi = new THREE.HemisphereLight(0xdfeeff, 0x6a6458, 0.9);
   scene.add(hemi);
@@ -69,7 +70,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     }
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    t.anisotropy = Math.min(isTouch ? 2 : 8, renderer.capabilities.getMaxAnisotropy());
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   }
@@ -140,7 +141,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   // ---------- 地面 (標高つき) ----------
   const GB = { x0: terrain.x0, z0: terrain.z0, x1: terrain.x0 + (terrain.nx - 1) * terrain.step, z1: terrain.z0 + (terrain.nz - 1) * terrain.step };
   const groundCanvas = document.createElement('canvas');
-  const GW = 4096, GH = Math.round(GW * (GB.z1 - GB.z0) / (GB.x1 - GB.x0));
+  const GW = isTouch ? 2048 : 4096, GH = Math.round(GW * (GB.z1 - GB.z0) / (GB.x1 - GB.x0));
   groundCanvas.width = GW; groundCanvas.height = GH;
   const gsx = GW / (GB.x1 - GB.x0), gsz = GH / (GB.z1 - GB.z0);
   const gx = (x) => (x - GB.x0) * gsx, gz = (z) => (z - GB.z0) * gsz;
@@ -216,18 +217,49 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       pos[k * 3] = x; pos[k * 3 + 1] = h[k]; pos[k * 3 + 2] = z;
       uv[k * 2] = (x - GB.x0) / (GB.x1 - GB.x0); uv[k * 2 + 1] = 1 - (z - GB.z0) / (GB.z1 - GB.z0);
     }
-    const idx = new Uint32Array((nx - 1) * (nz - 1) * 6);
-    let p = 0;
-    for (let j = 0; j < nz - 1; j++) for (let i = 0; i < nx - 1; i++) {
-      const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
-      idx[p++] = a; idx[p++] = c; idx[p++] = b; idx[p++] = b; idx[p++] = c; idx[p++] = d;
+    // 32×32 マスずつに分けて、画面に入らない所は描かない (視野の外の地面を省く)。
+    // スマホではコースのまわり (描く範囲 + 300m) より外の地面は作らない (外側は緑の平面が見える)
+    let cx0 = Infinity, cx1 = -Infinity, cz0 = Infinity, cz1 = -Infinity;
+    for (let i = 0; i < course.N; i += 20) { cx0 = Math.min(cx0, course.X[i]); cx1 = Math.max(cx1, course.X[i]); cz0 = Math.min(cz0, course.Z[i]); cz1 = Math.max(cz1, course.Z[i]); }
+    const pad = isTouch ? DRAW_R + 300 : Infinity;
+    const posAttr = new THREE.BufferAttribute(pos, 3), uvAttr = new THREE.BufferAttribute(uv, 2);
+    const normGeo = new THREE.BufferGeometry();
+    normGeo.setAttribute('position', posAttr);
+    {
+      const all = new Uint32Array((nx - 1) * (nz - 1) * 6);
+      let q = 0;
+      for (let j = 0; j < nz - 1; j++) for (let i = 0; i < nx - 1; i++) {
+        const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+        all[q++] = a; all[q++] = c; all[q++] = b; all[q++] = b; all[q++] = c; all[q++] = d;
+      }
+      normGeo.setIndex(new THREE.BufferAttribute(all, 1));
+      normGeo.computeVertexNormals();
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    geo.setIndex(new THREE.BufferAttribute(idx, 1));
-    geo.computeVertexNormals();
-    var ground = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: groundTex }));
+    const normAttr = normGeo.attributes.normal;
+    const groundMat = new THREE.MeshLambertMaterial({ map: groundTex });
+    var ground = new THREE.Group();
+    ground.material = groundMat; // ステンシルの設定は、まとめてこの材質に
+    const CH = 32;
+    for (let cj = 0; cj < nz - 1; cj += CH) for (let ci = 0; ci < nx - 1; ci += CH) {
+      const i1 = Math.min(nx - 1, ci + CH), j1 = Math.min(nz - 1, cj + CH);
+      const ax = x0 + ci * step, bx = x0 + i1 * step, az = z0 + cj * step, bz = z0 + j1 * step;
+      if (bx < cx0 - pad || ax > cx1 + pad || bz < cz0 - pad || az > cz1 + pad) continue;
+      const idx = [];
+      let ymin = Infinity, ymax = -Infinity;
+      for (let j = cj; j < j1; j++) for (let i = ci; i < i1; i++) {
+        const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+        idx.push(a, c, b, b, c, d);
+        ymin = Math.min(ymin, h[a]); ymax = Math.max(ymax, h[a]);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', posAttr);
+      geo.setAttribute('normal', normAttr);
+      geo.setAttribute('uv', uvAttr);
+      geo.setIndex(idx);
+      const c = new THREE.Vector3((ax + bx) / 2, (ymin + ymax) / 2, (az + bz) / 2);
+      geo.boundingSphere = new THREE.Sphere(c, Math.hypot(bx - ax, bz - az, ymax - ymin + 20) / 2);
+      ground.add(new THREE.Mesh(geo, groundMat));
+    }
     scene.add(ground);
   }
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), new THREE.MeshLambertMaterial({ color: 0x5f7a4c }));
@@ -371,11 +403,14 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
 
   // 水面の映り込み: いちばん近い水面の高さを鏡にして、カメラを上下反転した所から描く (three.js の Reflector と同じ方法)
   const mirrorCam = new THREE.PerspectiveCamera();
-  const rScale = isTouch ? 0.33 : 0.5;
+  // 水面の映り込み: スマホは解像度を下げ、3 コマに 1 回だけ描き直す (景色をもう一度描くので重い)
+  const rScale = isTouch ? 0.22 : 0.5;
+  let reflectFrame = 0;
   const _v = new THREE.Vector3(), _t = new THREE.Vector3(), _n = new THREE.Vector3(0, 1, 0), _rm = new THREE.Matrix4(), _la = new THREE.Vector3();
   const _plane = new THREE.Plane(), _clip = new THREE.Vector4(), _q = new THREE.Vector4();
   let mirrorLevel = 3;
   function reflect(camera) {
+    if (isTouch && (reflectFrame++ % 3) !== 0) return;
     const w = Math.max(64, Math.floor(renderer.domElement.width * rScale)), h = Math.max(64, Math.floor(renderer.domElement.height * rScale));
     if (waterInfo.rt.width !== w || waterInfo.rt.height !== h) waterInfo.rt.setSize(w, h);
     // 近くの水面の高さ (前の方を少し探す)
@@ -479,7 +514,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     const isGreen = (x, z) => { const i = (Math.floor(gz(z)) * GW + Math.floor(gx(x))) * 4; return img[i + 1] > img[i] + 12 && img[i + 1] > img[i + 2]; };
     // 公園・皇居・北の丸の緑 (コースのまわり 1.6km)
     const [CX, CZ] = ll(35.6855, 139.7530);
-    for (let k = 0; k < 90000 && pts.length < 11000; k++) {
+    for (let k = 0, maxT = isTouch ? 5000 : 11000; k < 90000 && pts.length < maxT; k++) {
       const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 1700;
       const x = CX + Math.cos(a) * r, z = CZ + Math.sin(a) * r;
       if (!isGreen(x, z) || waterInfo.levelAt(x, z) !== null || insideBuilding(x, z) || course.onRoad(x, z, 2.5)) continue;
@@ -528,8 +563,10 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     crown.translate(0, 1.6, 0);
     // 黒松: 斜めの幹から、平たい葉のかたまりが段になって横に張り出す
     const pineParts = [];
-    for (const [x, y, z, r] of [[0.0, 0.0, 0.0, 1.0], [0.75, -0.35, 0.25, 0.7], [-0.6, -0.55, -0.35, 0.65], [0.25, 0.42, -0.2, 0.6], [-0.3, -0.15, 0.6, 0.55]]) {
-      const c = new THREE.IcosahedronGeometry(r, 1);
+    // 三角形の数を抑える (松は数が多いので、細かい球にしない。スマホは葉のかたまりを 3 つに)
+    const pineBlobs = [[0.0, 0.0, 0.0, 1.0], [0.75, -0.35, 0.25, 0.7], [-0.6, -0.55, -0.35, 0.65], [0.25, 0.42, -0.2, 0.6], [-0.3, -0.15, 0.6, 0.55]];
+    for (const [x, y, z, r] of pineBlobs.slice(0, isTouch ? 3 : 5)) {
+      const c = new THREE.IcosahedronGeometry(r, 0);
       c.scale(1.25, 0.42, 1.25);
       c.translate(x, y, z);
       pineParts.push(c.toNonIndexed());
@@ -541,7 +578,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
       pineGeo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
       pineGeo.computeVertexNormals();
     }
-    const trunk = new THREE.CylinderGeometry(0.18, 0.25, 1, 5);
+    const trunk = new THREE.CylinderGeometry(0.18, 0.25, 1, isTouch ? 3 : 5, 1, true);
     trunk.translate(0, 0.5, 0);
     const im = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ color: 0xffffff }), pts.length);
     const pm = new THREE.InstancedMesh(pineGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), pts.length);
@@ -662,7 +699,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
 
   function update(dt, camera, time) {
     while (city.streamTiles(camera.position.x, camera.position.z, DRAW_R, 1) > 0 && false);
-    city.streamTiles(camera.position.x, camera.position.z, DRAW_R, 2);
+    city.streamTiles(camera.position.x, camera.position.z, DRAW_R, isTouch ? 1 : 2);
     techgym.update(time);
     balloon.update(time);
     fountain.update(time);
