@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261102110927';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102110927';
-import { ll } from './city.js?v=20261102110927';
-import { Terrain } from './terrain.js?v=20261102110927';
-import { createWorld } from './world.js?v=20261102110927';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102110927';
-import { Sfx, Bgm } from './audio.js?v=20261102110927';
-import { Chaser } from './oni.js?v=20261102110927';
-import { Fireworks } from './fireworks.js?v=20261102110927';
-import { WATER } from './water-data.js?v=20261102110927';
-import { ROADS } from './road-data.js?v=20261102110927';
+import { Course, LANE_W } from './course.js?v=20261102110953';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102110953';
+import { ll } from './city.js?v=20261102110953';
+import { Terrain } from './terrain.js?v=20261102110953';
+import { createWorld } from './world.js?v=20261102110953';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102110953';
+import { Sfx, Bgm } from './audio.js?v=20261102110953';
+import { Chaser } from './oni.js?v=20261102110953';
+import { Fireworks } from './fireworks.js?v=20261102110953';
+import { WATER } from './water-data.js?v=20261102110953';
+import { ROADS } from './road-data.js?v=20261102110953';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -542,9 +542,9 @@ $('privacyLink').href = t('privacyUrl');
 Ads.initDone.then(() => { if (Ads.privacyOptionsRequired) $('adPrivacy').hidden = false; });
 $('adPrivacyLink').onclick = (e) => { e.preventDefault(); Ads.showPrivacyOptions(); };
 
-// ---------- リワード広告のチート: ぶつかったら、広告を見て少し前から続きを走る (アプリのみ・1 ゲーム 3 回まで) ----------
+// ---------- リワード広告のチート: ぶつかったら、広告を見て少し前から続きを走る (アプリのみ・1 ゲーム 5 回まで) ----------
 // 一番悔しい失敗 (ゴールの手前でぶつかる) を取り返せるように。ぶつかった様子を見届けられるよう、少し待ってから案内を出す
-const REDO_DELAY = 2.2, REDO_WAIT = 6, REDO_MAX = 3;
+const REDO_DELAY = 2.2, REDO_WAIT = 6, REDO_MAX = 5;
 const redo = { active: false, busy: false, t: 0, timer: null };
 function offerRedo() {
   redo.timer = setTimeout(() => {
