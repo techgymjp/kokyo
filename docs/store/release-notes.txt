@@ -1,0 +1,20 @@
+<ja-JP>
+皇居ランナー、配信開始！
+・ロードバイクで皇居を一周（約6km）する3Dゲーム
+・建物は PLATEAU、坂は国土地理院の標高、車線数は OpenStreetMap の実際の東京
+・ランナー、歩行者、車、バイクをよけて走り抜ける。操作は左右・ブレーキ・ダッシュ
+・武道館、東京駅、桜田門、二重橋などの名所では横アングルに
+・朝・昼・夕方・夜の4ステージ。昼からは鬼が追いかけてくる
+・ぶつかっても広告を見れば少し前から続きを走れる（1ゲーム5回まで）
+・日本語・英語対応
+</ja-JP>
+<en-US>
+Kokyo Runner is here!
+• A 3D road bike ride around Tokyo's Imperial Palace (about 6 km)
+• Real Tokyo: PLATEAU buildings, real hills and real lane counts
+• Dodge runners, pedestrians, cars and motorbikes. Left, right, brake and dash
+• Camera angles that show off the Budokan, Tokyo Station, Sakuradamon, Nijubashi and more
+• Morning, Day, Dusk and Night stages. From Day on, an oni chases you
+• Crashed? Watch an ad to keep riding (up to 5 times per game)
+• English and Japanese
+</en-US>

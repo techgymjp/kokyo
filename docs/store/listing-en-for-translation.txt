@@ -1,0 +1,48 @@
+Kokyo Runner - English source text for machine translation (Google Play store listing)
+
+This version uses short, plain sentences without idioms or slang, so that automatic translation
+into other languages stays accurate. Keep the game name "Kokyo Runner" untranslated.
+
+[App name] (max 30 characters)
+Kokyo Runner: Palace Bike Ride
+
+[Short description] (max 80 characters)
+Ride a road bike around the Imperial Palace in Tokyo. Avoid the runners.
+
+[Full description] (max 4000 characters)
+It is morning at the Imperial Palace in Tokyo. Many people are running on the road next to the moat.
+You ride a road bike around the Palace. The course is about 6 km. Avoid the runners, the people on foot, the cars and the motorbikes.
+
+■ THE CITY IS REAL
+• The buildings come from PLATEAU. PLATEAU is the official 3D city model of Japan.
+• The hills use real height data. The number of lanes comes from OpenStreetMap.
+• You start at Nijubashi-mae. You pass Otemon Gate, Takebashi, Kudanshita, Chidorigafuchi, Hanzomon Gate, Miyakezaka and Sakuradamon Gate. You finish at Nijubashi-mae.
+• You go slowly up the Kudan-zaka hill. You go down the Miyakezaka hill at 80 km/h.
+
+■ RIDE BETWEEN THE RUNNERS
+• Runners use the lane next to the moat. Some run alone. Some run in groups of two or three. Some people are tired and walk.
+• Cars come toward you in the other lanes. Motorbikes ride between the lanes.
+• You can also ride on the sidewalk. The sidewalk at Chidorigafuchi is made of stones, so your bike shakes.
+• If you hit someone, the game ends. If you only touch the edge, you slow down.
+
+■ EASY CONTROLS
+• There are four buttons: left, right, brake and dash.
+• Your bike goes up to 40 km/h automatically. The dash button makes you faster than 40 km/h. Dash uses stamina.
+
+■ FAMOUS PLACES
+• You see the Nippon Budokan, Tokyo Station, Otemon Gate, Hirakawa-mon Gate, Wadakura Fountain Park, Chidorigafuchi, Hanzomon Gate, the National Diet Building, Sakuradamon Gate and Nijubashi Bridge.
+• Near each famous place, the camera shows the place from the side.
+
+■ FOUR STAGES
+• The stages are Morning, Day, Dusk and Night. When you finish a stage, the next stage opens. Each stage has more people and more cars.
+• From the Day stage, a demon (oni) on a cloud follows you. When it catches you, lightning falls.
+• Near Sakuradamon Gate, a samurai procession crosses the road in the snow. Find the gaps and ride through.
+
+■ MORE
+• You see fireworks at the goal. You get 1 to 3 stars for your time. The game saves your best time.
+• If you crash, you can watch an ad. Then you continue from a point just before the crash. You can do this 5 times in one game.
+• You can share your result with your friends.
+• You can play without the internet. Ads and sharing need the internet.
+• The game is in English and Japanese.
+
+Buildings: MLIT Project PLATEAU / Elevation and water: GSI Japan / Roads: © OpenStreetMap contributors

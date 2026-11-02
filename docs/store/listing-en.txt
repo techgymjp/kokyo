@@ -1,0 +1,46 @@
+Kokyo Runner - Google Play store listing (English / en-US)
+
+[App name] (max 30 characters)
+Kokyo Runner: Palace Bike Ride
+
+[Short description] (max 80 characters)
+Weave through runners on a road bike around Tokyo's Imperial Palace in 3D!
+
+[Full description] (max 4000 characters)
+Morning at the Imperial Palace in Tokyo. The road along the moat is packed with joggers.
+Hop on your road bike and ride the full loop around the Palace (about 6 km), dodging runners, pedestrians, cars and motorbikes!
+
+■ RIDE THE REAL TOKYO
+• Buildings come from PLATEAU, Japan's official 3D city model. Hills follow real elevation data, and lane counts follow OpenStreetMap
+• Start at Nijubashi-mae, ride past Otemon Gate, Takebashi, Kudanshita, Chidorigafuchi, Hanzomon Gate, Miyakezaka and Sakuradamon Gate, and finish back at Nijubashi-mae
+• Crawl up Kudan-zaka, then fly down Miyakezaka at 80 km/h!
+
+■ SQUEEZE THROUGH
+• The moat-side lane is open to runners: solo joggers, pairs, trios, tired walkers, and the odd Edo-period hikyaku messenger
+• Cars come at you in the oncoming lanes, and motorbikes split the lanes. Swing out for speed, if you dare
+• You can ride on the sidewalk too, but Chidorigafuchi's cobblestones will shake you. Road edge or sidewalk?
+• Hit anyone and it's game over. Just clip an edge and you only slow down: "Grazed!"
+
+■ SIMPLE CONTROLS
+• Left, right, brake and dash. That's it
+• You pedal automatically up to 40 km/h. Dashing past 40 km/h uses stamina
+
+■ SIGHTSEEING AT SPEED
+• Nippon Budokan, Tokyo Station's Marunouchi Building, Otemon and Hirakawa-mon gates, Wadakura Fountain Park, Chidorigafuchi, Hanzomon Gate, the National Diet Building, Sakuradamon Gate and Nijubashi Bridge
+• At each landmark the camera swings around to show it off
+
+■ FOUR STAGES
+• Morning, Day, Dusk and Night. Finish a stage to unlock the next, with more people and more traffic
+• From Day on, an oni riding a cloud chases you. When it catches up, lightning strikes!
+• Near Sakuradamon, Ii Naosuke's procession is crossing the road in the snow... find the gaps!
+
+■ AND MORE
+• Fireworks at the finish. Earn 1 to 3 stars for your time and beat your best
+• Crashed? Watch an ad to keep riding from just before the crash (up to 5 times per game)
+• Share your result with friends
+• Plays offline (ads and sharing need a connection)
+• English and Japanese
+
+Ready? The race starts at Nijubashi-mae. Can you make it all the way around?
+
+Buildings: MLIT Project PLATEAU / Elevation & water: GSI Japan / Roads: © OpenStreetMap contributors

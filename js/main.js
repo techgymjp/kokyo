@@ -1381,4 +1381,4 @@ if (TOUR) {
   setTimeout(() => { go(); setInterval(go, 9000); }, 500);
 }
 
-if (DEBUG) window.dbg = { SHOW, oni, strike, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
+if (DEBUG) window.dbg = { SHOW, oni, strike, startEvent, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
