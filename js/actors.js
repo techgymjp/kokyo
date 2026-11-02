@@ -39,8 +39,13 @@ export class Crowd {
   draw(list) {
     const n = Math.min(this.max, list.length);
     let ky = 0, kh = 0;
+    // 色は、その枠に入る人が変わったときだけ書き直す (毎コマ全員の色を送ると重い)
+    if (!this.slotC) this.slotC = [];
+    let colorDirty = false;
     for (let i = 0; i < n; i++) {
       const p = list[i];
+      const newC = this.slotC[i] !== p.c;
+      if (newC) { this.slotC[i] = p.c; colorDirty = true; }
       const amp = p.amp, ph = p.phase;
       const bob = Math.abs(Math.sin(ph)) * 0.06 * amp;
       _e.set(0, p.yaw, 0); _q.setFromEuler(_e);
@@ -51,7 +56,7 @@ export class Crowd {
         _m2.compose(_v.set(lx, ly, lz), _q, _s);
         _m2.premultiply(body);
         mesh.setMatrixAt(idx, _m2);
-        mesh.setColorAt(idx, color);
+        if (newC) mesh.setColorAt(idx, color);
       };
       put(this.torso, i, 0, 0.98, 0, lean, p.c.shirt);
       put(this.hips, i, 0, 1.0, 0, 0, p.c.pants);
@@ -85,7 +90,7 @@ export class Crowd {
     for (const m of this.meshes) {
       m.count = m === this.thigh || m === this.shin || m === this.arm ? n * 2 : m === this.yari || m === this.tuft ? ky : m === this.pole || m === this.box ? kh : n;
       m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      if (m.instanceColor && colorDirty) m.instanceColor.needsUpdate = true;
     }
   }
 }

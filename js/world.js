@@ -1,14 +1,14 @@
 // 景色: PLATEAU の街・地形 (標高)・お濠 (水面の映り込み)・幹線道路・木・名所・コースの道路
 // 街の描画はターザン大東京 (techgymjp/tarzan) の main.js を元に、地面の高さに合わせて組み直した
 import * as THREE from '../vendor/three.module.min.js';
-import { City, ll } from './city.js?v=20261102105443';
-import { CITY } from './city-data.js?v=20261102105443';
-import { ROADS } from './road-data.js?v=20261102105443';
-import { WATER, WATER_LEVEL } from './water-data.js?v=20261102105443';
-import { LANE_W, CURB_H } from './course.js?v=20261102105443';
-import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261102105443';
-import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261102105443';
-import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261102105443';
+import { City, ll } from './city.js?v=20261102110927';
+import { CITY } from './city-data.js?v=20261102110927';
+import { ROADS } from './road-data.js?v=20261102110927';
+import { WATER, WATER_LEVEL } from './water-data.js?v=20261102110927';
+import { LANE_W, CURB_H } from './course.js?v=20261102110927';
+import { addTokyoTower, addDiet, addSkytree, addFuji, addDistant, addTechGym, addBudokan, addImperialPalace, addPalaceGates, hipGeo, canvasTex, JP } from './landmarks.js?v=20261102110927';
+import { addTokyoStation, addYotsuyaKudan, addAkasaka, addNewOtani } from './landmarks2.js?v=20261102110927';
+import { hideFamousSites, addFamous, addNijubashi, addOtemon, addWakeNoKiyomaro, addHanzomon, addSakuradamon, addWadakuraFountain } from './landmarks3.js?v=20261102110927';
 
 const TOD = {
   morning: { top: 0x4f8fd8, hor: 0xf3d9c0, fog: 0xdfe3e6, sun: 0xfff1d8, sunI: 1.5, hemi: 0.85, sunDir: [0.75, 0.3, 0.2], emi: 0, fogFar: 2600 },
@@ -105,6 +105,10 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   city.buildRoads(scene);
 
   // 名所 (ターザン大東京の手作りモデル)。原点に置いた部品は地面の高さへ持ち上げる
+  // 動かない名所の模型は、あとで材質ごとに 1 つにまとめる (描く回数を減らして軽く)
+  const staticBefore = new Set(scene.children);
+  const dynamicRoots = new Set();
+  const markDynamic = (fn) => { const b = new Set(scene.children); const r = fn(); for (const o of scene.children) if (!b.has(o)) dynamicRoots.add(o); return r; };
   const place = (fn) => {
     const before = new Set(scene.children);
     const r = fn(scene, city);
@@ -118,7 +122,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const tower = place(addTokyoTower);
   place(addDiet);
   const techgym = place((sc, c) => addTechGym(sc, c, { noBalloon: true }));
-  const balloon = addBalloon(scene, city);
+  const balloon = markDynamic(() => addBalloon(scene, city));
   const budokan = place(addBudokan);
   const palace = place(addImperialPalace);
   const gates = place(addPalaceGates);
@@ -132,11 +136,12 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const castle = addCastleGates(scene, course, G);
   castle.otemon = addOtemon(scene, course, G);
   castle.sakurada = addSakuradamon(scene, course, G);
-  const fountain = addWadakuraFountain(scene, course, G);
+  const fountain = markDynamic(() => addWadakuraFountain(scene, course, G));
   const wake = addWakeNoKiyomaro(scene, course, G);
   castle.hanzo = addHanzomon(scene, course, G);
   place(() => addKusunoki(scene, G));
   const famous = addFamous(scene, G);
+  const staticRoots = scene.children.filter((o) => !staticBefore.has(o) && !dynamicRoots.has(o));
 
   // ---------- 地面 (標高つき) ----------
   const GB = { x0: terrain.x0, z0: terrain.z0, x1: terrain.x0 + (terrain.nx - 1) * terrain.step, z1: terrain.z0 + (terrain.nz - 1) * terrain.step };
@@ -355,7 +360,7 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
           vec3 refl = texture2DProj(tReflect, r).rgb;
           vec3 v = normalize(camPos - vW);
           float fres = 0.25 + 0.75 * pow(1.0 - max(v.y, 0.0), 3.0);
-          vec3 c = mix(color, refl, clamp(fres * strength + 0.15, 0.0, 0.95));
+          vec3 c = mix(color, refl, clamp(fres * strength + 0.15 * step(0.01, strength), 0.0, 0.95));
           c += vec3(0.04) * (w1 * 0.5 + 0.5) * (1.0 - fres);
           float f = smoothstep(fogNear, fogFar, vDepth);
           gl_FragColor = vec4(mix(c, fogColor, f), 1.0);
@@ -399,7 +404,9 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     for (let d = course.L - 300; d < course.L; d += 2) { const p = course.frame(d); const q = (p.x - x) ** 2 + (p.z - z) ** 2; if (q < bd) { bd = q; best = [p.x, p.z]; } }
     return best;
   })();
+  const nb0 = new Set(scene.children);
   const nijubashi = addNijubashi(scene, G, waterInfo.levelAt, nijuFace);
+  for (const o of scene.children) if (!nb0.has(o)) staticRoots.push(o);
 
   // 水面の映り込み: いちばん近い水面の高さを鏡にして、カメラを上下反転した所から描く (three.js の Reflector と同じ方法)
   const mirrorCam = new THREE.PerspectiveCamera();
@@ -410,7 +417,8 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   const _plane = new THREE.Plane(), _clip = new THREE.Vector4(), _q = new THREE.Vector4();
   let mirrorLevel = 3;
   function reflect(camera) {
-    if (isTouch && (reflectFrame++ % 3) !== 0) return;
+    // スマホは映り込みを描かない (景色をもう一度描くので、ときどきカクッと止まる)。水面は空の色を映す
+    if (isTouch) return;
     const w = Math.max(64, Math.floor(renderer.domElement.width * rScale)), h = Math.max(64, Math.floor(renderer.domElement.height * rScale));
     if (waterInfo.rt.width !== w || waterInfo.rt.height !== h) waterInfo.rt.setSize(w, h);
     // 近くの水面の高さ (前の方を少し探す)
@@ -663,7 +671,8 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
   }
 
   // ---------- スタート / ゴールのゲート (二重橋前) ----------
-  addStartGate(scene, course);
+  { const sg0 = new Set(scene.children); addStartGate(scene, course); for (const o of scene.children) if (!sg0.has(o)) staticRoots.push(o); }
+  mergeStatic(scene, staticRoots);
 
   // ---------- 時間帯 ----------
   function applyTod(k) {
@@ -692,7 +701,8 @@ export function createWorld({ renderer, scene, course, terrain, isTouch }) {
     skytreeMat.color.setHex(k === 'night' ? 0x6a86b8 : 0xd8e2ea);
     lampMat.emissiveIntensity = k === 'night' ? 1.2 : k === 'dusk' ? 0.5 : 0;
     waterInfo.waterMat.uniforms.color.value.setHex(k === 'night' ? 0x0c1a22 : k === 'dusk' ? 0x3a4a52 : 0x2f5a63);
-    waterInfo.waterMat.uniforms.strength.value = k === 'night' ? 0.95 : 0.75;
+    waterInfo.waterMat.uniforms.strength.value = isTouch ? 0 : k === 'night' ? 0.95 : 0.75;
+    if (isTouch) waterInfo.waterMat.uniforms.color.value.lerp(new THREE.Color(t.fog), 0.15); // 映り込みの代わりに空の色を少し混ぜる
     roadMeshes.setNight(k === 'night');
     return t;
   }
@@ -1014,4 +1024,47 @@ function addBalloon(scene, city) {
     },
     setNight(k) { ballMat.emissive.setHex(k === 'night' ? 0x803000 : k === 'dusk' ? 0x4a1c00 : 0x2a1000); },
   };
+}
+
+// 動かない模型 (roots の下のメッシュ) を、材質ごとに 1 つのメッシュにまとめる。描く回数 (draw call) を減らす
+function mergeStatic(scene, roots) {
+  const groups = new Map();
+  scene.updateMatrixWorld(true);
+  for (const r of roots) {
+    r.traverse((o) => {
+      if (!o.isMesh || o.isInstancedMesh || Array.isArray(o.material) || !o.visible) return;
+      const m = o.material;
+      if (m.isShaderMaterial || m.transparent || !o.geometry.attributes.normal) return;
+      const key = m.uuid;
+      if (!groups.has(key)) groups.set(key, { m, list: [] });
+      groups.get(key).list.push(o);
+    });
+  }
+  const _n = new THREE.Matrix3();
+  for (const { m, list } of groups.values()) {
+    if (list.length < 2) continue;
+    const useUv = !!(m.map || m.emissiveMap), useCol = !!m.vertexColors;
+    if (list.some((o) => (useUv && !o.geometry.attributes.uv) || (useCol && !o.geometry.attributes.color))) continue;
+    const pos = [], nor = [], uv = [], col = [];
+    for (const o of list) {
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
+      const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, C = g.attributes.color;
+      _n.getNormalMatrix(o.matrixWorld);
+      const v = new THREE.Vector3(), nv = new THREE.Vector3();
+      for (let i = 0; i < P.count; i++) {
+        v.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld); pos.push(v.x, v.y, v.z);
+        nv.fromBufferAttribute(N, i).applyMatrix3(_n).normalize(); nor.push(nv.x, nv.y, nv.z);
+        if (useUv) uv.push(U.getX(i), U.getY(i));
+        if (useCol) col.push(C.getX(i), C.getY(i), C.getZ(i));
+      }
+      o.parent.remove(o);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    if (useUv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    if (useCol) geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.computeBoundingSphere();
+    scene.add(new THREE.Mesh(geo, m));
+  }
 }

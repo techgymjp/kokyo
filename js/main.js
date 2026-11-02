@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261102105443';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102105443';
-import { ll } from './city.js?v=20261102105443';
-import { Terrain } from './terrain.js?v=20261102105443';
-import { createWorld } from './world.js?v=20261102105443';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102105443';
-import { Sfx, Bgm } from './audio.js?v=20261102105443';
-import { Chaser } from './oni.js?v=20261102105443';
-import { Fireworks } from './fireworks.js?v=20261102105443';
-import { WATER } from './water-data.js?v=20261102105443';
-import { ROADS } from './road-data.js?v=20261102105443';
+import { Course, LANE_W } from './course.js?v=20261102110927';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102110927';
+import { ll } from './city.js?v=20261102110927';
+import { Terrain } from './terrain.js?v=20261102110927';
+import { createWorld } from './world.js?v=20261102110927';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102110927';
+import { Sfx, Bgm } from './audio.js?v=20261102110927';
+import { Chaser } from './oni.js?v=20261102110927';
+import { Fireworks } from './fireworks.js?v=20261102110927';
+import { WATER } from './water-data.js?v=20261102110927';
+import { ROADS } from './road-data.js?v=20261102110927';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -1290,9 +1290,12 @@ function render(dt, time) {
   bgm.setEnergy(Math.min(1, P.v / 20));
 }
 
+let hudFrame = 0;
 function updateHud() {
   updateBanner();
   if (game.state === 'title') return;
+  // スマホは文字の書き換え (画面の組み直しが起きる) を 3 コマに 1 回に
+  if (isTouch && (hudFrame++ % 3) !== 0) { $('hSpeed').textContent = Math.round(kmh(P.v)); return; }
   $('hTime').textContent = fmtTime(game.t);
   $('hSpeed').textContent = Math.round(kmh(P.v));
   $('hDist').textContent = `${(Math.max(0, Math.min(P.D, course.L)) / 1000).toFixed(2)} / ${(course.L / 1000).toFixed(2)} km`;
@@ -1318,7 +1321,8 @@ function updateHud() {
   const g = course.grade(P.D) * 100;
   $('hGrade').textContent = g > 1.2 ? t('up', { g: g.toFixed(1) }) : g < -1.2 ? t('down', { g: (-g).toFixed(1) }) : '';
   $('hGrade').className = g > 1.2 ? 'up' : 'down';
-  mini.draw();
+  // ミニマップは大きな絵を回して描くので、スマホは 3 コマに 1 回
+  if (!isTouch || hudFrame % 3 === 1) mini.draw();
 }
 
 // ---------- ループ ----------
