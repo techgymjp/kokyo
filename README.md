@@ -1,6 +1,6 @@
 # 皇居ランナー（Kokyo Runner）
 
-ロードバイクで皇居を一周（約6km）するブラウザ 3D ゲームです（three.js）。
+ロードバイクで皇居を一周（約6km）するブラウザ 3D ゲームです（three.js）。Android / iOS アプリにもなっています。
 二重橋前をスタートして、大手門・竹橋・九段下（武道館）・千鳥ヶ淵・半蔵門・三宅坂・桜田門をまわり、二重橋前に戻ってきます。
 ランナーや歩行者、車やバイクをよけながら走り抜けます。
 
@@ -38,6 +38,22 @@ Capacitor で Web 版のファイルをアプリに同梱しています（オ�
 npm ci
 npm run android:sync
 npm run android:open
+```
+
+## iOS アプリ
+
+Android 版と同じ Capacitor のプロジェクトに `ios/` を足しています（Swift Package Manager の構成。CocoaPods 不要）。Bundle ID は `jp.techgym.kokyo`、iPhone 専用・横画面固定です。
+
+- Mac でのビルドと App Store への提出の手順: [`docs/IOS_BUILD.md`](docs/IOS_BUILD.md)
+- App Store の掲載情報と画像: `docs/store/ios/`（`appstore-listing.md`、スクリーンショット `6.3inch/`、ヘッダ・検索結果の画像、まとめた `appstore-images.zip`）
+- GitHub Actions（`.github/workflows/ios.yml`）: push のたびに macOS でビルドできるかを確認します。iOS 用の Secrets（`docs/IOS_BUILD.md` の 8 章）を登録すると、本番広告でビルドして TestFlight にアップロードします
+- 本番の広告ユニット ID は `js/ads.js` の `UNITS.ios.production`、AdMob のアプリ ID は `ios/App/App/Info.plist` の `GADApplicationIdentifier`
+
+```sh
+npm ci
+npm run ios:sync      # テスト広告
+npm run ios:release   # 本番広告（App Store 用）
+npm run ios:open
 ```
 
 ## データの作り方

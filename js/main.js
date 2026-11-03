@@ -1,16 +1,16 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261102110953';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261102110953';
-import { ll } from './city.js?v=20261102110953';
-import { Terrain } from './terrain.js?v=20261102110953';
-import { createWorld } from './world.js?v=20261102110953';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261102110953';
-import { Sfx, Bgm } from './audio.js?v=20261102110953';
-import { Chaser } from './oni.js?v=20261102110953';
-import { Fireworks } from './fireworks.js?v=20261102110953';
-import { WATER } from './water-data.js?v=20261102110953';
-import { ROADS } from './road-data.js?v=20261102110953';
+import { Course, LANE_W } from './course.js?v=20261103043543';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261103043543';
+import { ll } from './city.js?v=20261103043543';
+import { Terrain } from './terrain.js?v=20261103043543';
+import { createWorld } from './world.js?v=20261103043543';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261103043543';
+import { Sfx, Bgm } from './audio.js?v=20261103043543';
+import { Chaser } from './oni.js?v=20261103043543';
+import { Fireworks } from './fireworks.js?v=20261103043543';
+import { WATER } from './water-data.js?v=20261103043543';
+import { ROADS } from './road-data.js?v=20261103043543';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -1381,4 +1381,4 @@ if (TOUR) {
   setTimeout(() => { go(); setInterval(go, 9000); }, 500);
 }
 
-if (DEBUG) window.dbg = { SHOW, oni, strike, startEvent, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
+if (DEBUG) window.dbg = { SHOW, oni, strike, bolt, startEvent, spawnRunners, fillPeople, DIFF, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };

@@ -1,8 +1,8 @@
 // コースから見える著名な建物 (手作り)。PLATEAU では箱になってしまうので、実際の形と色に近づける
 //   パレスホテル東京 (和田倉門)・パレスサイドビル (竹橋)・国立劇場・最高裁判所 (三宅坂)・法務省 赤れんが棟 (桜田門)
 import * as THREE from '../vendor/three.module.min.js';
-import { ll } from './city.js?v=20261102110953';
-import { hipGeo, canvasTex } from './landmarks.js?v=20261102110953';
+import { ll } from './city.js?v=20261103043543';
+import { hipGeo, canvasTex } from './landmarks.js?v=20261103043543';
 
 // 手作りに置き換える所 (この半径の中の PLATEAU の建物は描かない)
 export const FAMOUS_SITES = [
