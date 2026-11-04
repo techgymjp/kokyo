@@ -90,7 +90,7 @@ npm run ios:open    # Xcode で開く
 4. 録画を止める（写真アプリに保存される）
 5. 動画が大きいと App Review への返信に添付できない（400MB でも失敗した）。Mac の Finder で右クリック →「選択したビデオファイルをエンコード」→ 720p にして小さくするか、Google ドライブなどの共有リンクを返信文に貼る
 
-録画と一緒に、次の文を「App Review に関する情報」の「メモ」に**最初の提出のときから**入れておきます（審査とのやり取りは英語。techgymjp/jet-fighter の `docs/ANDROID_PORTING.md` 7-6 のひな形）。依頼が来たときの返信にも同じ文を使い、録画は返信に添付します（メモの文には録画の項目を入れない）。
+録画と一緒に、次の文を（6 は、似たアプリが多いと判断される「Guideline 4.3 Design - Spam」への説明）「App Review に関する情報」の「メモ」に**最初の提出のときから**入れておきます（審査とのやり取りは英語。techgymjp/jet-fighter の `docs/ANDROID_PORTING.md` 7-6 のひな形）。依頼が来たときの返信にも同じ文を使い、録画は返信に添付します（メモの文には録画の項目を入れない）。
 
 ```
 1. Purpose and audience: Kokyo Runner is a free 3D road bike game for ages 13+. The player rides a road bike around the Imperial Palace in Tokyo (about 6 km) and avoids runners, pedestrians, cars and motorbikes.
@@ -102,6 +102,12 @@ npm run ios:open    # Xcode で開く
 4. Regional differences: None, except that the ad consent form appears only where required (e.g. EEA/UK).
 
 5. Regulated content / third-party material: The game is not in a regulated industry. The city is built from open data: 3D building models from MLIT Project PLATEAU (open data that may be used commercially with attribution), elevation and water data from GSI Japan, and road data from OpenStreetMap (© OpenStreetMap contributors, ODbL). These sources are credited on the title screen. All other graphics and sounds are original.
+
+6. Uniqueness (Guideline 4.3 Design - Spam): Kokyo Runner is a single, original game, not a template or a re-skin of another app, and we have no other version of it on the App Store. The concept, gameplay and content were designed and built for this title:
+- Setting: a faithful 3D model of the real 6 km loop around the Imperial Palace in Tokyo, built from open city data (buildings, real elevation, real lane counts). Landmarks along the route (Nippon Budokan, Tokyo Station, Sakuradamon Gate, Nijubashi Bridge and others) were modeled individually, and the camera changes angle to show each one.
+- Gameplay: the player rides a road bike and weaves through crowds of joggers on a road closed for runners, while cars and motorbikes come from the front and from behind. Speed depends on real slopes (slow uphill, fast downhill), dashing uses stamina, cobblestone sidewalks slow the bike, and near misses are scored.
+- Content unique to this game: runners in groups that cannot be passed through, an Edo-period messenger, a historical samurai procession crossing the road at Sakuradamon Gate, an oni (Japanese demon) on a cloud that chases the player and strikes lightning, and four stages (morning, day, dusk and night).
+Our other games are in different genres with different gameplay and content. They share only common parts such as the ad and sharing code, which does not affect what the player sees or does.
 ```
 
 ---
