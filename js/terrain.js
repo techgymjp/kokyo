@@ -1,6 +1,6 @@
 // 地面の高さ (国土地理院の標高タイルから作った 20m 格子)。コースの道路の所は道路の高さにならす
-import { TERRAIN } from './terrain-data.js?v=20261104070956';
-import { LANE_W } from './course.js?v=20261104070956';
+import { TERRAIN } from './terrain-data.js?v=20261104071016';
+import { LANE_W } from './course.js?v=20261104071016';
 
 export class Terrain {
   constructor(course) {
