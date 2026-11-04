@@ -1,0 +1,9 @@
+1. Purpose and audience: Kokyo Runner is a free 3D road bike game for ages 13+. The player rides a road bike around the Imperial Palace in Tokyo (about 6 km) and avoids runners, pedestrians, cars and motorbikes.
+
+2. How to use: No login or account is needed. On the title screen, tap "Start" (スタート) to play. Controls: left, right, brake and dash buttons. The "How to play" (遊び方) screen explains the rules. The game is in English and Japanese (English is used automatically on English devices; the language can be switched on the title screen).
+
+3. External services: Google AdMob (banner, interstitial and rewarded ads) with Google's consent form (UMP) and App Tracking Transparency. Rewarded ads are optional: after a crash, watching one lets the player continue from just before the crash (up to 5 times per game). No other services or in-app purchases.
+
+4. Regional differences: None, except that the ad consent form appears only where required (e.g. EEA/UK).
+
+5. Regulated content / third-party material: The game is not in a regulated industry. The city is built from open data: 3D building models from MLIT Project PLATEAU (open data that may be used commercially with attribution), elevation and water data from GSI Japan, and road data from OpenStreetMap (© OpenStreetMap contributors, ODbL). These sources are credited on the title screen. All other graphics and sounds are original.
