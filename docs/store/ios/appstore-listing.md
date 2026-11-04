@@ -10,6 +10,7 @@ App Store Connect の「配信」タブ（iOS App のバージョン 1.0.0）と
 - プライバシーポリシー URL: 日本語 https://techgym.jp/privacy-policy/ ・英語 https://techgym.jp/privacy-policy-en/
 - 著作権: 2026 TECH GYM K.K.
 - 文字数はどれも上限以内であることを確認済み（キーワードはバイト数で数える。日本語は 1 文字 3 バイト）
+- App Store Connect は概要の一部の記号を「無効な文字」として受け付けない。★ → … © は使わない（■ ・ （） ！ ？ 〜 は使える）
 
 ---
 
@@ -39,7 +40,7 @@ App Store Connect の「配信」タブ（iOS App のバージョン 1.0.0）と
 皇居,ラン,自転車,東京,レース,ジョギング,武道館,二重橋,桜田門,3D,PLATEAU
 ```
 
-**概要**（4000 文字以内・956 文字。Google Play の「詳しい説明」と同じ）
+**概要**（4000 文字以内・945 文字。Google Play の「詳しい説明」と同じ）
 
 ```
 朝の皇居。お濠沿いの道には、たくさんのランナーが走っている。
@@ -65,12 +66,12 @@ App Store Connect の「配信」タブ（iOS App のバージョン 1.0.0）と
 ・名所の前では、カメラが横から名所を映すアングルに切り替わる
 
 ■ 4つのステージ
-・朝 → 昼 → 夕方 → 夜。ゴールすると次のステージが開き、人も車も増えていく
+・朝、昼、夕方、夜の順。ゴールすると次のステージが開き、人も車も増えていく
 ・昼からは、雲に乗った鬼が後ろから追いかけてくる。追いつかれると稲妻が落ちる！
-・桜田門の手前では、井伊直弼の行列が雪の中を横断中…？ 隙間をすり抜けろ
+・桜田門の手前では、井伊直弼の行列が雪の中を横断中？ 隙間をすり抜けろ
 
 ■ その他
-・ゴールで花火。タイムで★1〜3、ベストタイムを記録
+・ゴールで花火。タイムで星1〜3、ベストタイムを記録
 ・ぶつかっても、広告を見ればぶつかる少し前から続きを走れる（1ゲーム5回まで）
 ・結果を友だちにシェア
 ・オフラインでも遊べる（広告・シェアは通信が必要）
@@ -78,7 +79,7 @@ App Store Connect の「配信」タブ（iOS App のバージョン 1.0.0）と
 
 さあ、二重橋前からスタート。ゴールまで走り抜けられるか？
 
-建物: 国土交通省 Project PLATEAU ／ 標高・水面: 国土地理院 ／ 道路: © OpenStreetMap contributors
+建物: 国土交通省 Project PLATEAU、標高・水面: 国土地理院、道路: OpenStreetMap contributors
 ```
 
 ---
@@ -109,7 +110,7 @@ Morning at Tokyo's Imperial Palace, and the moat-side road is packed with jogger
 tokyo,japan,bike,cycling,race,runner,jogging,imperial,palace,racing,3D,PLATEAU,city,budokan
 ```
 
-**Description**（4000 文字以内・2239 文字。Google Play の「Full description」と同じ）
+**Description**（4000 文字以内・2237 文字。Google Play の「Full description」と同じ）
 
 ```
 Morning at the Imperial Palace in Tokyo. The road along the moat is packed with joggers.
@@ -148,7 +149,7 @@ Hop on your road bike and ride the full loop around the Palace (about 6 km), dod
 
 Ready? The race starts at Nijubashi-mae. Can you make it all the way around?
 
-Buildings: MLIT Project PLATEAU / Elevation & water: GSI Japan / Roads: © OpenStreetMap contributors
+Buildings: MLIT Project PLATEAU / Elevation & water: GSI Japan / Roads: OpenStreetMap contributors
 ```
 
 ---
