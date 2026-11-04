@@ -7,7 +7,7 @@
 //   対向車線 (u > 0)        … 向こうから車が来る
 // ただし都道301号 (祝田橋 → 二重橋前 → 大手門 → 竹橋) は4車線の一方通行: いちばん左の車線だけランナー、
 // 残りの3車線は後ろから車が追い抜いていく (対向車線はない)
-import { PTS, LABELS, ELEV } from './course-data.js?v=20261103043543';
+import { PTS, LABELS, ELEV } from './course-data.js?v=20261104070956';
 
 export const LANE_W = 3.2;   // 1車線の幅
 export const WALK_W = 3.6;   // 歩道の幅

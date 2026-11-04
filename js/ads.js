@@ -23,11 +23,11 @@ window.Ads = (() => {
         rewarded: 'ca-app-pub-3940256099942544/1712485313',
         banner: 'ca-app-pub-3940256099942544/2934735716',
       },
-      // 本番の広告ユニット(AdMob の「皇居ランナー」iOS)。iOS 版を作るときに入れる
+      // 本番の広告ユニット(AdMob の「皇居ランナー」iOS)。空の種類は本番ビルドでは出さない
       production: {
         interstitial: '',
         rewarded: '',
-        banner: '',
+        banner: 'ca-app-pub-6411535997477460/2320078906',
       },
     },
   };
