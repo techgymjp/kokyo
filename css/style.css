@@ -168,3 +168,8 @@ body.banner .panel { top: calc(50% - 30px); max-height: calc(100vh - 76px); }
   #result button:not(.big) { margin: 4px 3px; padding: 6px 14px; }
   #pause.panel { padding: 12px 16px; }
 }
+/* Web 版だけの Google Play へのリンク (アプリの中では body.native で隠す) */
+.store-link { margin: 6px 0 2px; font-size: 13px; color: #9cd0ff; }
+.store-link a { color: #9cd0ff; }
+a.store-link { margin: 0; }
+body.native .store-link { display: none; }

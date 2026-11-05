@@ -1,7 +1,7 @@
 // 街: PLATEAU のビルの描画 (ターザン大東京の js/city.js を元に、地面の高さ (標高) に対応させた)
 import * as THREE from '../vendor/three.module.min.js';
-import { CITY } from './city-data.js?v=20261104071035';
-import { HIGHWAYS } from './road-data.js?v=20261104071035';
+import { CITY } from './city-data.js?v=20261105070119';
+import { HIGHWAYS } from './road-data.js?v=20261105070119';
 
 export const KX = 111320 * Math.cos(CITY.origin[0] * Math.PI / 180);
 export const KZ = 110574;
