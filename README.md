@@ -31,6 +31,7 @@ Capacitor で Web 版のファイルをアプリに同梱しています（オ�
   - リワード広告: ぶつかったときに見ると、ぶつかる少し前から続きを走れる（1 ゲーム 5 回まで。結果とシェア文に「やり直し」の回数）
 - 本番の広告ユニット ID は `js/ads.js` の `production`、AdMob のアプリ ID は `android/app/src/main/res/values/strings.xml` の `admob_app_id`
 - Web 版の公開（GitHub Pages）も `scripts/build-web.js` で作る `www/` を公開します
+- アプリ（Android / iOS）は `npm run build:app` で作ります。Web 版だけの部分（Google Play へのリンク、`?debug` などの確認用のパラメータ）は `<!-- web-only -->` / `// web-only:start` の目印で囲み、アプリ用のビルドでは取り除きます（App Store の審査で「隠した機能」と判断されないように）
 
 手元でビルドするとき（Android Studio が必要）:
 

@@ -219,4 +219,5 @@ Actions の実行のページの「Summary」に、アップロードしたバ�
 | 「審査用に追加できません」 | 「コンテンツの配信権」と「プライバシーポリシー URL」が入っているかを確認する |
 | Archive で「Xcode Cloud can automate…」が出る | 「Remind Me Later」で閉じてよい |
 | Xcode の「Product」メニューが見つからない | 画面最上部のメニューバーにある。全画面表示だと隠れるので、マウスを画面の上端に動かす |
+| 「Guideline 5.6 - Developer Code of Conduct」（審査中に隠した機能がある） | Web 版だけの部分（Google Play へのリンク、確認用の URL パラメータ）がアプリに入っていると、こう判断されることがある。アプリ用のビルド（`npm run build:app`。`ios:sync`・`ios:release`・GitHub Actions はこれを使う）では、`<!-- web-only -->` と `// web-only:start` で囲んだ部分を取り除き、`play.google.com` などが残っていたらビルドを止める。Web 版だけに足す物は、必ずこの目印で囲む。返信では「Web 版用のリンクと隠す処理がバンドルに入っていたので取り除いた。審査中と審査後で機能は同じ」と説明し、新しいビルドに差し替えて実機の録画を添付する |
 | 本番広告とテスト広告の取り違え | App Store 用は必ず `npm run ios:release`。Xcode から実機で試すときは `npm run ios:sync` に戻す |

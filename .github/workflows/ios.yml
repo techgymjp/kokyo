@@ -54,7 +54,7 @@ jobs:
       - name: Copy web assets into the iOS project (test ads)
         if: env.HAS_SIGNING != 'true'
         run: |
-          npm run build
+          npm run build:app
           npx cap sync ios
 
       - name: Build for the simulator (no signing)
@@ -74,7 +74,7 @@ jobs:
           echo "VERSION_NAME=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
           # Mac から手でアップロードした番号(1, 2, 3…)とぶつからないよう 100 を足す
           echo "BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 100))" >> "$GITHUB_ENV"
-          ADMOB_MODE=production npm run build
+          ADMOB_MODE=production npm run build:app
           npx cap sync ios
 
       # 配布用の証明書を、この実行だけで使うキーチェーンに入れる

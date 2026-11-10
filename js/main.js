@@ -1,23 +1,27 @@
 // 皇居ランナー: ロードバイクで皇居を一周 (二重橋前 → 大手門 → 竹橋 → 九段下 → 千鳥ヶ淵 → 半蔵門 → 三宅坂 → 桜田門 → 二重橋前)
 import * as THREE from '../vendor/three.module.min.js';
-import { Course, LANE_W } from './course.js?v=20261105070119';
-import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261105070119';
-import { ll } from './city.js?v=20261105070119';
-import { Terrain } from './terrain.js?v=20261105070119';
-import { createWorld } from './world.js?v=20261105070119';
-import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261105070119';
-import { Sfx, Bgm } from './audio.js?v=20261105070119';
-import { Chaser } from './oni.js?v=20261105070119';
-import { Fireworks } from './fireworks.js?v=20261105070119';
-import { WATER } from './water-data.js?v=20261105070119';
-import { ROADS } from './road-data.js?v=20261105070119';
+import { Course, LANE_W } from './course.js?v=20261110011411';
+import { LANG, setLang, t, nm, applyStatic } from './i18n.js?v=20261110011411';
+import { ll } from './city.js?v=20261110011411';
+import { Terrain } from './terrain.js?v=20261110011411';
+import { createWorld } from './world.js?v=20261110011411';
+import { Crowd, Bike, CAR_TYPES, carGeometry, lightsGeometry, motoGeometry, carriageGeometry, runnerColors, walkerColors, samuraiColors, hikyakuColors } from './actors.js?v=20261110011411';
+import { Sfx, Bgm } from './audio.js?v=20261110011411';
+import { Chaser } from './oni.js?v=20261110011411';
+import { Fireworks } from './fireworks.js?v=20261110011411';
+import { WATER } from './water-data.js?v=20261110011411';
+import { ROADS } from './road-data.js?v=20261110011411';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 if (isTouch) document.body.classList.add('touch');
+// 確認・撮影用の URL パラメータ (?debug ?tour ?nocrash) は Web 版だけ。アプリ用のビルドでは取り除き、下の app-only の行に置き換わる
+// web-only:start
 const DEBUG = location.search.includes('debug');
 // ?tour: 見せ場ツアー (見せ場を順に自動で回る。ぶつかってもゲームオーバーにならない)
 const TOUR = location.search.includes('tour');
+// web-only:end
+// app-only: const DEBUG = false, TOUR = false;
 const store = {
   get(k, d) { try { const v = localStorage.getItem('kokyo.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('kokyo.' + k, JSON.stringify(v)); } catch (e) { /* 保存できなくても遊べる */ } },
@@ -470,8 +474,10 @@ function togglePause() {
 // ---------- アプリ (Android) ----------
 // Capacitor で動いているか。Web 版では Capacitor がないので何もしない
 const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-// アプリの中では、Web 版向けの Google Play へのリンクを出さない
+// web-only:start
+// Web 版のファイルをそのままアプリで開いたときに、Google Play へのリンクを出さない (アプリ用のビルドではリンクごと取り除く)
 if (NATIVE) document.body.classList.add('native');
+// web-only:end
 const plugin = (name) => (NATIVE && window.Capacitor.Plugins ? window.Capacitor.Plugins[name] : null);
 const Ads = window.Ads || { available: false, canReward: false, showing: false, privacyOptionsRequired: false, initDone: Promise.resolve(), showInterstitial: async () => {}, showRewarded: async () => 'unavailable', setBanner() {}, showPrivacyOptions: async () => {} };
 // 広告を出している間は音を止める
@@ -731,7 +737,9 @@ function graze(o) {
 
 function crash(by) {
   if (game.state !== 'play') return;
+  // web-only:start
   if (TOUR || location.search.includes('nocrash')) return;
+  // web-only:end
   game.state = 'crash';
   game.crashBy = by;
   game.crashT = 0;
@@ -1266,8 +1274,10 @@ function render(dt, time) {
   camera.position.lerp(camPos, Math.min(1, dt * (showW > 0.05 ? 3 : 6)));
   if (game.shake > 0) { game.shake -= dt; camera.position.y += (Math.random() - 0.5) * 0.25 * game.shake / 0.3; camera.position.x += (Math.random() - 0.5) * 0.1 * game.shake / 0.3; }
   camera.lookAt(camLook);
+  // web-only:start
   // 確認用 (?debug のときだけ): dbg.cam = [x, y, z, tx, ty, tz] でカメラを固定
   if (DEBUG && window.dbg && dbg.cam) { camera.position.set(dbg.cam[0], dbg.cam[1], dbg.cam[2]); camera.lookAt(dbg.cam[3], dbg.cam[4], dbg.cam[5]); }
+  // web-only:end
   let fov = isTouch ? 62 + sp * 12 : 68 + sp * 18; // スマホは画角を狭めて自転車を大きく
   // 横アングルで遠くの名所を写すときは望遠に (画角を狭く)
   const scf = showcase(P.D);
@@ -1363,7 +1373,8 @@ toTitle();
 $('loading').classList.add('hidden');
 loop();
 
-// ---------- 見せ場ツアー ----------
+// ---------- 見せ場ツアー (Web 版の確認用) ----------
+// web-only:start
 if (TOUR) {
   const stops = SHOW.map((o) => ({ name: o.name, mode: o.mode, d: o.mode === 'side' || o.mode === 'front' ? o.c - 45 : o.s0 + 20 })).sort((a, b) => a.d - b.d);
   let k = 0;
@@ -1384,3 +1395,4 @@ if (TOUR) {
 }
 
 if (DEBUG) window.dbg = { SHOW, oni, strike, bolt, startEvent, spawnRunners, fillPeople, DIFF, snapCam: () => { camInit = false; }, THREE, scene, camera, course, terrain, world, game, P, startGame, crash, finish, setTod, renderer };
+// web-only:end
