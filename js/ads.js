@@ -26,7 +26,7 @@ window.Ads = (() => {
       // 本番の広告ユニット(AdMob の「皇居ランナー」iOS)。空の種類は本番ビルドでは出さない
       production: {
         interstitial: 'ca-app-pub-6411535997477460/7492727536',
-        rewarded: 'ca-app-pub-6411535997477460/5001635452',
+        rewarded: 'ca-app-pub-6411535997477460/9523034049',
         banner: 'ca-app-pub-6411535997477460/2428103117',
       },
     },
