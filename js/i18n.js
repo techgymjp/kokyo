@@ -1,6 +1,10 @@
 // 日本語 / 英語。ブラウザの言語で自動で選び、タイトル画面の切り替えで変えられる (localStorage の kokyo.lang に保存)
 const saved = (() => { try { return JSON.parse(localStorage.getItem('kokyo.lang')); } catch (e) { return null; } })();
+// ?lang=ja|en は Web 版の確認・撮影用。アプリには入れない
+// web-only:start
 const fromUrl = (location.search.match(/[?&]lang=(ja|en)/) || [])[1];
+// web-only:end
+// app-only: const fromUrl = null;
 export let LANG = fromUrl || saved || ((navigator.language || 'ja').toLowerCase().startsWith('ja') ? 'ja' : 'en');
 export function setLang(l) {
   LANG = l;

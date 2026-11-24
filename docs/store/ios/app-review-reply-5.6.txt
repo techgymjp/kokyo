@@ -1,0 +1,23 @@
+Hello App Review team,
+
+Thank you for the review. We investigated Guideline 5.6 and found the cause on our side.
+
+Kokyo Runner is also published as a web game, and the app was built from the same files. The previous build therefore contained parts that belong only to the web version:
+- a link to the Android version on Google Play, together with code that hid this link inside the app, and
+- URL parameters that we used only for testing and taking screenshots of the web version (?debug, ?tour, ?nocrash, ?lang).
+None of these could be turned on in the app, but we understand that code like this looks like a feature hidden during review. We did not intend to hide anything.
+
+What we changed in the new build:
+- The app is now built with a separate app build step that removes all web-only parts. The build stops if a link to another store or a testing parameter is left in the app.
+- There is no remote configuration and no code that changes features by device, region or date. The app behaves the same during and after review, and on iPad it runs as an iPhone app with the same features.
+- The only differences between devices are Google's ad consent form (shown only where required, e.g. EEA/UK) and the language (Japanese or English, chosen from the device language and changeable on the title screen).
+
+How to reach every feature shown in the screenshots and description:
+- Only the Morning stage is open at first. Reaching the goal (one lap, about 9 minutes) opens Day, then Dusk, then Night.
+- The samurai procession crosses the road near Sakuradamon Gate (about 5.2 km into the lap) in every stage.
+- From the Day stage on, an oni (demon) on a cloud chases the player.
+- After a crash, the player can optionally watch a rewarded ad to continue from just before the crash (up to 5 times per game).
+
+We have submitted the new build and attached a screen recording on a real device, from launch to the result screen. We have also updated the App Review notes.
+
+Thank you for your time.

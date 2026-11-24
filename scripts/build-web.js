@@ -39,7 +39,7 @@ if (app) {
     if (s !== before) fs.writeFileSync(f, s);
   }
   // 取り残しがあればビルドを止める
-  const bad = [/play\.google\.com/, /web-only/, /location\.search\.includes\('(debug|tour|nocrash)'\)/, /window\.dbg\b/];
+  const bad = [/play\.google\.com/, /web-only/, /location\.search/, /window\.dbg\b/];
   for (const f of files) {
     const s = fs.readFileSync(f, 'utf8');
     for (const re of bad) if (re.test(s)) { console.error(`アプリ用のビルドに Web 版だけの部分が残っています: ${path.relative(root, f)} (${re})`); process.exit(1); }

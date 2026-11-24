@@ -108,6 +108,8 @@ npm run ios:open    # Xcode で開く
 - Gameplay: the player rides a road bike and weaves through crowds of joggers on a road closed for runners, while cars and motorbikes come from the front and from behind. Speed depends on real slopes (slow uphill, fast downhill), dashing uses stamina, cobblestone sidewalks slow the bike, and near misses are scored.
 - Content unique to this game: runners in groups that cannot be passed through, an Edo-period messenger, a historical samurai procession crossing the road at Sakuradamon Gate, an oni (Japanese demon) on a cloud that chases the player and strikes lightning, and four stages (morning, day, dusk and night).
 Our other games are in different genres with different gameplay and content. They share only common parts such as the ad and sharing code, which does not affect what the player sees or does.
+
+7. Game progression (so that every feature can be reached during review): there are no hidden or remotely switched features, and the app behaves the same on every device, region and date (on iPad it runs as an iPhone app). The stages unlock in order: only Morning is open at first; reaching the goal (one lap, about 9 minutes at the normal speed of 40 km/h) opens Day, then Dusk, then Night. The samurai procession crosses the road near Sakuradamon Gate (about 5.2 km into the lap) in every stage. The oni (demon) on a cloud chases the player from the Day stage on. The only differences between devices are the ad consent form (only where required) and the language (Japanese or English, chosen from the device language and changeable on the title screen).
 ```
 
 ---
